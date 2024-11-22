@@ -43,7 +43,7 @@ OneButton button(BUTTON_PIN_INPUT, true);
 
 unsigned long previousMillis = 0;
 unsigned long currentMillis = 0;
-byte automode = 255; // change to 0 if you dont want automode on start
+boolean automode = true; // change to false if you dont want automode on start
 byte InitNeeded = 1;
 byte brigtness = 80;
 
@@ -59,58 +59,87 @@ void FadeIn(byte steps);
 #include "tables.h"
 #include "patterns.h"
 
+// Constants
+#define SECONDS_PER_PALETTE 10
+#define BLEND_SPEED 16
+#define BLEND_INTERVAL_MS 40
+
+// Function Prototypes
+void initializeSerial();
+void initializeLEDs();
+void initializeButton();
+void handleButton();
+void changePalette();
+void blendPalette();
+
+// Setup function
 void setup()
 {
+  initializeSerial();
+  initializeLEDs();
+  initializeButton();
+}
+
+// Loop function
+void loop()
+{
+  handleButton();
+  changePalette();
+  blendPalette();
+}
+
+// Initialize Serial Communication
+void initializeSerial()
+{
   Serial.begin(115200);
-
-  FastLED.addLeds<LED_TYPE, DATA_PIN, COLOR_ORDER>(leds, NUM_LEDS);
-  FastLED.setMaxPowerInVoltsAndMilliamps(5, MAX_POWER_MILLIAMPS);
-  FastLED.setBrightness(brigtness);
-  FastLED.clear();
-
-  gTargetPalette = (gGradientPalettes[random8(gGradientPaletteCount)]); // shoose random pallete on start
-
-  button.attachClick(oneClick);
-  button.attachDoubleClick(doubleClick);
-  button.attachDuringLongPress(longPress);
-  //  button.setDebounceTicks(80);
   if (automode)
     Serial.println("automode On");
   else
     Serial.println("automode Off");
 }
 
-void loop()
+// Initialize LEDs
+void initializeLEDs()
 {
+  FastLED.addLeds<LED_TYPE, DATA_PIN, COLOR_ORDER>(leds, NUM_LEDS);
+  FastLED.setMaxPowerInVoltsAndMilliamps(5, MAX_POWER_MILLIAMPS);
+  FastLED.setBrightness(brigtness);
+  FastLED.clear();
+  gTargetPalette = gGradientPalettes[random8(gGradientPaletteCount)]; // Choose random palette on start
+}
 
+// Initialize Button
+void initializeButton()
+{
+  button.attachClick(oneClick);
+  button.attachDoubleClick(doubleClick);
+  button.attachDuringLongPress(longPress);
+  // button.setDebounceTicks(80);
+}
+
+// Handle Button Events
+void handleButton()
+{
   button.tick();
+}
 
+// Change Palette Periodically
+void changePalette()
+{
   EVERY_N_SECONDS(SECONDS_PER_PALETTE)
-  { // random change palettes
+  {
     gCurrentPaletteNumber = random8(gGradientPaletteCount);
     gTargetPalette = gGradientPalettes[gCurrentPaletteNumber];
   }
+}
 
-  EVERY_N_MILLISECONDS(40)
-  { // blend current palette to next palette
-    nblendPaletteTowardPalette(gCurrentPalette, gTargetPalette, 16);
+// Blend Current Palette to Target Palette
+void blendPalette()
+{
+  EVERY_N_MILLISECONDS(BLEND_INTERVAL_MS)
+  {
+    nblendPaletteTowardPalette(gCurrentPalette, gTargetPalette, BLEND_SPEED);
   }
-
-  EVERY_N_SECONDS(90)
-  { // speed of change patterns periodically
-    if (automode)
-    {
-      FadeOut(150);                                                                // fade out current effect
-      gCurrentPatternNumber = (gCurrentPatternNumber + 1) % ARRAY_SIZE(gPatterns); // next effect
-      InitNeeded = 1;                                                              // flag if init something need
-      FadeIn(200);                                                                 // fade in current effect
-    }
-  }
-
-  gPatterns[gCurrentPatternNumber](); // play current pattern
-
-  FastLED.show();
-  delay(4); // some time fast call rapidly FastLED.show() on esp32 causes flicker, this delay() is easy way to fix this
 }
 
 static void doubleClick()
@@ -131,7 +160,7 @@ static void oneClick()
   gCurrentPatternNumber = (gCurrentPatternNumber + 1 + ARRAY_SIZE(gPatterns)) % ARRAY_SIZE(gPatterns); // next effect
   InitNeeded = 1;                                                                                      // flag if init something need
   previousMillis = millis();
-  automode = 0;
+  automode = false;
 }
 
 static void longPress()
@@ -139,7 +168,7 @@ static void longPress()
   Serial.println("Long press!");
   Serial.println("AutomodeOn");
   previousMillis = currentMillis;
-  automode = 255;
+  automode = true;
 }
 
 void FadeOut(byte steps)
