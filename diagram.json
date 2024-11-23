@@ -1,0 +1,62 @@
+{
+    "version": 1,
+    "author": "Costyn van Dongen",
+    "editor": "wokwi",
+    "parts": [
+        {
+            "type": "board-esp32-devkit-c-v4",
+            "id": "esp",
+            "top": 672,
+            "left": 388.84,
+            "attrs": {}
+        },
+        {
+            "type": "wokwi-splendida",
+            "id": "neopixels",
+            "top": 30,
+            "left": 10.97,
+            "attrs": {
+                "pixels": "256"
+            }
+        }
+    ],
+    "connections": [
+        [
+            "esp:TX",
+            "$serialMonitor:RX",
+            "",
+            []
+        ],
+        [
+            "esp:RX",
+            "$serialMonitor:TX",
+            "",
+            []
+        ],
+        [
+            "neopixels:DIN",
+            "esp:26",
+            "green",
+            [
+                "v0"
+            ]
+        ],
+        [
+            "esp:5V",
+            "neopixels:VDD",
+            "red",
+            [
+                "h0"
+            ]
+        ],
+        [
+            "esp:GND.1",
+            "neopixels:VSS",
+            "black",
+            [
+                "h0"
+            ]
+        ]
+    ],
+    "dependencies": {}
+}
