@@ -1,91 +1,51 @@
 // Splendida 256 NEW demoreel with palletes
 // fastled fibonacci 256 leds demo
-// Yaroslaw Turbin
+// Yaroslaw Turbin 2021
 // https://vk.com/ldirko
 // https://www.reddit.com/user/ldirko/
 // https://twitter.com/ldir_ko
+
+// Costyn van Dongen 2024
+// https://github.com/costyn
 
 // controls: from start automode is enable and patterns change in loop
 // one button click change pattern to next and automode is OFF
 // double click change bright in loop 0..maxbright with 7 steps. not affect to Automode
 // long press activate Automode ON
 
-#include <Arduino.h>
-#include "OneButton.h" // https://github.com/mathertel/OneButton
-#include <FastLED.h>
-
-#define DATA_PIN 26         // set your leds datapin   change to 32 for m5 atom lite
-#define ATOMLED_PIN 27      // set your leds datapin   change to 27 for m5 atom lite
-#define BUTTON_PIN_INPUT 39 // button pin              change to 39 for m5 atom lite
-
-#define LED_TYPE WS2812B // leds type
-#define COLOR_ORDER GRB  // color order of leds
-
-#define MAX_POWER_MILLIAMPS 800 // write here your power in milliamps. default i set 800 mA for safet
-
-#define NUM_COLS_PLANAR 20 // resolution of planar lookup table
-#define NUM_ROWS_PLANAR 20 // resolution of planar lookup table
-#define NUM_LEDS_PLANAR NUM_COLS_PLANAR *NUM_ROWS_PLANAR
-
-#define NUM_COLS_CILINDR 45 // resolution of cilindrical lookup table
-#define NUM_ROWS_CILINDR 11 // resolution of cinindrical lookup table
-#define NUM_LEDS_CILINDR NUM_COLS_CILINDR *NUM_ROWS_CILINDR
-
-#define NUM_LEDS 256
-
-uint16_t lastSafeIndex = 256;
-
-CRGB leds[NUM_LEDS + 1];
-
-byte rain[(NUM_COLS_PLANAR + 2) * (NUM_ROWS_PLANAR + 2)];
-
-OneButton button(BUTTON_PIN_INPUT, true);
-
-unsigned long previousMillis = 0;
-unsigned long currentMillis = 0;
-boolean automode = true; // change to false if you dont want automode on start
-byte InitNeeded = 1;
-byte brigtness = 80;
-
-uint8_t gCurrentPatternNumber = 0; // Index number of which pattern is current
-
-static void oneClick();
-static void doubleClick();
-static void longPress();
-void FadeOut(byte steps);
-void FadeIn(byte steps);
-
-#include "palettes.h"
-#include "tables.h"
-#include "patterns.h"
-
-// Constants
-#define SECONDS_PER_PALETTE 10
-#define BLEND_SPEED 16
-#define BLEND_INTERVAL_MS 40
-
-// Function Prototypes
-void initializeSerial();
-void initializeLEDs();
-void initializeButton();
-void handleButton();
-void changePalette();
-void blendPalette();
+#include "splendidanew.h"
 
 // Setup function
 void setup()
 {
   initializeSerial();
   initializeLEDs();
-  initializeButton();
+  // initializeButton();
 }
 
 // Loop function
 void loop()
 {
-  handleButton();
+  // handleButton();
   changePalette();
   blendPalette();
+
+  EVERY_N_SECONDS(15)
+  { // speed of change patterns periodically
+    if (automode)
+    {
+      // FadeOut (150);        // fade out current effect
+      gCurrentPatternNumber = (gCurrentPatternNumber + 1) % ARRAY_SIZE(gPatterns); // next effect
+      InitNeeded = 1;                                                              // flag if init something need
+      // FadeIn (200);        // fade in current effect
+    }
+  }
+
+  gPatterns[gCurrentPatternNumber](); // play current pattern
+  statled[0].fadeToBlackBy(1);
+
+  FastLED.show();
+  // FastLED.delay(1000 / 60); // Add a delay to control the frame rate
 }
 
 // Initialize Serial Communication
@@ -102,8 +62,9 @@ void initializeSerial()
 void initializeLEDs()
 {
   FastLED.addLeds<LED_TYPE, DATA_PIN, COLOR_ORDER>(leds, NUM_LEDS);
-  FastLED.setMaxPowerInVoltsAndMilliamps(5, MAX_POWER_MILLIAMPS);
-  FastLED.setBrightness(brigtness);
+  FastLED.addLeds<LED_TYPE, ATOMLED_PIN, COLOR_ORDER>(statled, 1);
+  // FastLED.setMaxPowerInVoltsAndMilliamps(5, MAX_POWER_MILLIAMPS);
+  FastLED.setBrightness(splendidaBrightness);
   FastLED.clear();
   gTargetPalette = gGradientPalettes[random8(gGradientPaletteCount)]; // Choose random palette on start
 }
@@ -130,6 +91,7 @@ void changePalette()
   {
     gCurrentPaletteNumber = random8(gGradientPaletteCount);
     gTargetPalette = gGradientPalettes[gCurrentPaletteNumber];
+    Serial.println(splendidaBrightness);
   }
 }
 
@@ -148,9 +110,10 @@ static void doubleClick()
   static byte brIndex = 3;
   static byte bright[] = {0, 16, 32, 64, 96, 128, 170}; // 7 steps
   brIndex = (brIndex + 1) % 7;
-  brigtness = bright[brIndex];
-  FastLED.setBrightness(brigtness);
-  Serial.println(brigtness);
+  splendidaBrightness = bright[brIndex];
+  FastLED.setBrightness(splendidaBrightness);
+  Serial.println(splendidaBrightness);
+  statled[0].setHue(150);
 }
 
 static void oneClick()
@@ -161,6 +124,7 @@ static void oneClick()
   InitNeeded = 1;                                                                                      // flag if init something need
   previousMillis = millis();
   automode = false;
+  statled[0].setHue(0);
 }
 
 static void longPress()
@@ -169,6 +133,7 @@ static void longPress()
   Serial.println("AutomodeOn");
   previousMillis = currentMillis;
   automode = true;
+  statled[0].setHue(100);
 }
 
 void FadeOut(byte steps)
@@ -176,7 +141,7 @@ void FadeOut(byte steps)
   for (int i = 0; i <= steps; i++)
   {
     gPatterns[gCurrentPatternNumber]();
-    byte fadeOut = lerp8by8(brigtness, 0, 255 * i / steps);
+    byte fadeOut = lerp8by8(splendidaBrightness, 0, 255 * i / steps);
     FastLED.setBrightness(fadeOut);
     FastLED.show();
     delay(10);
@@ -188,7 +153,7 @@ void FadeIn(byte steps)
   for (int i = steps + 1; i--; i >= 0)
   {
     gPatterns[gCurrentPatternNumber]();
-    byte fadeOut = lerp8by8(brigtness, 0, 255 * i / steps);
+    byte fadeOut = lerp8by8(splendidaBrightness, 0, 255 * i / steps);
     FastLED.setBrightness(fadeOut);
     FastLED.show();
     delay(10);
