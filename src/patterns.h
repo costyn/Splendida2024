@@ -124,10 +124,9 @@ void fire2021()
 
 // Distortion_Waves_plan_____________________________________
 
-void Distortion_Waves_plan()
+void Distortion_Waves_planar()
 {
   byte speed = 5;
-  uint8_t w = 2;
   uint8_t scale = 2;
 
   uint16_t a = millis() / 24;
@@ -145,33 +144,28 @@ void Distortion_Waves_plan()
 
   for (int x = 0; x < NUM_COLS_PLANAR; x++)
   {
-
     xoffs += scale;
     uint16_t yoffs = 0;
 
     for (int y = 0; y < NUM_ROWS_PLANAR; y++)
     {
       uint16_t index = XY_fibon_PLANAR(x, y);
-
       yoffs += scale;
-
-      // byte rdistort = cos_wave [((x+y)*8+a2)&255]>>1;
-      // byte gdistort = cos_wave [((x+y)*8+a3+32)&255]>>1;
-      // byte bdistort = cos_wave [((x+y)*8+a+64)&255]>>1;
 
       byte rdistort = cos_wave[(cos_wave[((x << 3) + a) & 255] + cos_wave[((y << 3) - a2) & 255] + a3) & 255] >> 1;
       byte gdistort = cos_wave[(cos_wave[((x << 3) - a2) & 255] + cos_wave[((y << 3) + a3) & 255] + a + 32) & 255] >> 1;
       byte bdistort = cos_wave[(cos_wave[((x << 3) + a3) & 255] + cos_wave[((y << 3) - a) & 255] + a2 + 64) & 255] >> 1;
 
-      byte valueR = rdistort + w * (a - (((xoffs - cx) * (xoffs - cx) + (yoffs - cy) * (yoffs - cy)) >> 7));
-      byte valueG = gdistort + w * (a2 - (((xoffs - cx1) * (xoffs - cx1) + (yoffs - cy1) * (yoffs - cy1)) >> 7));
-      byte valueB = bdistort + w * (a3 - (((xoffs - cx2) * (xoffs - cx2) + (yoffs - cy2) * (yoffs - cy2)) >> 7));
+      byte valueR = rdistort + (a - (((xoffs - cx) * (xoffs - cx) + (yoffs - cy) * (yoffs - cy)) >> 7));
+      byte valueG = gdistort + (a2 - (((xoffs - cx1) * (xoffs - cx1) + (yoffs - cy1) * (yoffs - cy1)) >> 7));
+      byte valueB = bdistort + (a3 - (((xoffs - cx2) * (xoffs - cx2) + (yoffs - cy2) * (yoffs - cy2)) >> 7));
 
       valueR = cos_wave[valueR];
       valueG = cos_wave[valueG];
       valueB = cos_wave[valueB];
 
-      leds[index].setRGB(valueR, valueG, valueB);
+      CRGB newcolor = ColorFromPalette(gCurrentPalette, (valueR + valueG + valueB) / 3, 255);
+      leds[index] = newcolor;
     }
   }
   GammaCorrection();
@@ -425,11 +419,10 @@ void RGB_Caleidoscope1()
       if (index == lastSafeIndex)
         continue;
 
-      byte valueR = (sin8(i * 16 + a) + cos8(j * 16 + a / 2)) / 2;
-      byte valueG = sin8(j * 16 + a / 2 + sin8(leds[index].r + a) / 16);
-      byte valueB = cos8(i * 16 + j * 16 - a / 2 + leds[index].g);
+      byte colorIndex = (sin8(i * 16 + a) + cos8(j * 16 + a / 2)) / 2;
+      CRGB newcolor = ColorFromPalette(gCurrentPalette, colorIndex, 255);
 
-      leds[index].setRGB(valueR, valueG, valueB);
+      leds[index] = newcolor;
     }
   }
   GammaCorrection();
@@ -449,7 +442,10 @@ void RGB_Caleidoscope2()
       if (index == lastSafeIndex)
         continue;
 
-      leds[index].setRGB((sin8(i * 28 + a) + cos8(j * 28 + a)) >> 1, (sin8(i * 28 - a) + cos8(j * 28 + a >> 1)) >> 1, sin8(j * 26 + a));
+      byte colorIndex = (sin8(i * 28 + a) + cos8(j * 28 + a)) >> 1;
+      CRGB newcolor = ColorFromPalette(gCurrentPalette, colorIndex, 255);
+
+      leds[index] = newcolor;
     }
   }
   GammaCorrection();
@@ -457,7 +453,7 @@ void RGB_Caleidoscope2()
 
 // Distortion_Waves_cilindr_____________________________________
 
-void Distortion_Waves_cilindr()
+void Distortion_Waves_cylinder()
 {
   byte speed = 5;
   uint8_t w = 2;
@@ -829,20 +825,17 @@ void SoftTwinkles()
     FastLED.clear();
     InitNeeded = 0;
   }
-  // from Mark Kriegsman's great ODD/EVEN gist
-  // kriegsman/SoftTwinkles.ino
-  // https://gist.github.com/kriegsman/99082f66a726bdff7776
 
   static const CRGB lightcolor(0, 4, 4);
-  static const CRGB darktcolor(0, 2, 2);
+  static const CRGB darkColor(0, 2, 2);
 
   for (int i = 0; i < NUM_LEDS; i++)
   {
     if (!leds[i])
       continue; // skip black pixels
     if (leds[i].b & 1)
-    {                        // is red odd?
-      leds[i] -= darktcolor; // darken if red is odd
+    {                       // is red odd?
+      leds[i] -= darkColor; // darken if red is odd
     }
     else
     {
@@ -852,7 +845,9 @@ void SoftTwinkles()
 
   int j = random16(NUM_LEDS);
   if (!leds[j])
-    leds[j].b = 2;
+  {
+    leds[j] = ColorFromPalette(gCurrentPalette, random8(), 255);
+  }
   j = random16(NUM_LEDS);
   if (leds[j].r & 1)
     leds[j].b -= 1;
@@ -871,10 +866,10 @@ SimplePatternList gPatterns = // this is list of patterns
         F_lying,
         RGBTunnel,
         Flower,
-        Distortion_Waves_cilindr,
+        Distortion_Waves_cylinder,
         colorwaves,
         DiagonalPattern,
-        Distortion_Waves_plan,
+        Distortion_Waves_planar,
         FireButterfly,
         SoftTwinkles,
         Spiral2,
@@ -895,10 +890,10 @@ const char *patternNames[] = {
     "F_lying",
     "RGBTunnel",
     "Flower",
-    "Distortion_Waves_cilindr",
+    "Distortion_Waves_cylinder",
     "colorwaves",
     "DiagonalPattern",
-    "Distortion_Waves_plan",
+    "Distortion_Waves_planar",
     "FireButterfly",
     "SoftTwinkles",
     "Spiral2",

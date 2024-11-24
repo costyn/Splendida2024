@@ -42,6 +42,12 @@
 
 #define NUM_LEDS 256
 
+// Animation Constants
+#define SECONDS_PER_PALETTE 10
+#define SECONDS_PER_PATTERN 45
+#define BLEND_SPEED 16
+#define BLEND_INTERVAL_MS 40
+
 uint16_t lastSafeIndex = 256;
 
 CRGB leds[NUM_LEDS + 1];
@@ -55,7 +61,7 @@ unsigned long previousMillis = 0;
 unsigned long currentMillis = 0;
 boolean automode = true; // change to false if you dont want automode on start
 byte InitNeeded = 1;
-byte splendidaBrightness = 80;
+byte splendidaBrightness = 60;
 
 uint8_t gCurrentPatternNumber = 0; // Index number of which pattern is current
 
@@ -68,12 +74,6 @@ void FadeIn(byte steps);
 #include "palettes.h"
 #include "tables.h"
 #include "patterns.h"
-
-// Constants
-#define SECONDS_PER_PALETTE 10
-#define SECONDS_PER_PATTERN 45
-#define BLEND_SPEED 16
-#define BLEND_INTERVAL_MS 40
 
 // Function Prototypes
 void initializeSerial();
