@@ -17,6 +17,12 @@
 #include "OneButton.h" // https://github.com/mathertel/OneButton
 #include <FastLED.h>
 
+// Emulator
+// #define DATA_PIN 26         // set your leds datapin   change to 32 for m5 atom lite
+// #define ATOMLED_PIN 19      // set your leds datapin   change to 27 for m5 atom lite
+// #define BUTTON_PIN_INPUT 16 // button pin              change to 39 for m5 atom lite
+
+// Atom Matrix M5
 #define DATA_PIN 26         // set your leds datapin   change to 32 for m5 atom lite
 #define ATOMLED_PIN 27      // set your leds datapin   change to 27 for m5 atom lite
 #define BUTTON_PIN_INPUT 39 // button pin              change to 39 for m5 atom lite
@@ -49,7 +55,7 @@ unsigned long previousMillis = 0;
 unsigned long currentMillis = 0;
 boolean automode = true; // change to false if you dont want automode on start
 byte InitNeeded = 1;
-byte splendidaBrightness = 255;
+byte splendidaBrightness = 80;
 
 uint8_t gCurrentPatternNumber = 0; // Index number of which pattern is current
 
@@ -65,6 +71,7 @@ void FadeIn(byte steps);
 
 // Constants
 #define SECONDS_PER_PALETTE 10
+#define SECONDS_PER_PATTERN 30
 #define BLEND_SPEED 16
 #define BLEND_INTERVAL_MS 40
 
@@ -72,6 +79,7 @@ void FadeIn(byte steps);
 void initializeSerial();
 void initializeLEDs();
 void initializeButton();
+void printPatternAndPalette();
 void handleButton();
 void changePalette();
 void blendPalette();

@@ -530,4 +530,39 @@ const TProgmemRGBGradientPaletteRef gGradientPalettes[] = {
 const uint8_t gGradientPaletteCount =
     sizeof(gGradientPalettes) / sizeof(TProgmemRGBGradientPaletteRef);
 
+const char *paletteNames[] = {
+    "Sunset_Real_gp",
+    "es_rivendell_15_gp",
+    "es_ocean_breeze_036_gp",
+    "rgi_15_gp",
+    "retro2_16_gp",
+    "Analogous_1_gp",
+    "es_pinksplash_08_gp",
+    "Coral_reef_gp",
+    "es_ocean_breeze_068_gp",
+    "es_pinksplash_07_gp",
+    "es_vintage_01_gp",
+    "departure_gp",
+    "es_landscape_64_gp",
+    "es_landscape_33_gp",
+    "rainbowsherbet_gp",
+    "gr65_hult_gp",
+    "gr64_hult_gp",
+    "GMT_drywet_gp",
+    "ib_jul01_gp",
+    "es_vintage_57_gp",
+    "ib15_gp",
+    "Fuschia_7_gp",
+    "es_emerald_dragon_08_gp",
+    "lava_gp",
+    "fire_gp",
+    "Colorfull_gp",
+    "Magenta_Evening_gp",
+    "Pink_Purple_gp",
+    "es_autumn_19_gp",
+    "BlacK_Blue_Magenta_White_gp",
+    "BlacK_Magenta_Red_gp",
+    "BlacK_Red_Magenta_Yellow_gp",
+    "Blue_Cyan_Yellow_gp"};
+
 #endif

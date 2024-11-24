@@ -13,10 +13,28 @@
         {
             "type": "wokwi-splendida",
             "id": "neopixels",
-            "top": 30,
-            "left": 10.97,
+            "top": 0,
+            "left": -133.04,
             "attrs": {
                 "pixels": "256"
+            }
+        },
+        {
+            "type": "wokwi-neopixel",
+            "id": "rgb1",
+            "top": 92.5,
+            "left": 661.4,
+            "attrs": {
+                "pixels": "1"
+            }
+        },
+        {
+            "type": "wokwi-pushbutton",
+            "id": "btn1",
+            "top": 284.6,
+            "left": 595.2,
+            "attrs": {
+                "color": "green"
             }
         }
     ],
@@ -55,6 +73,46 @@
             "black",
             [
                 "h0"
+            ]
+        ],
+        [
+            "esp:GND.2",
+            "rgb1:VSS",
+            "black",
+            [
+                "h0"
+            ]
+        ],
+        [
+            "esp:5V",
+            "rgb1:VDD",
+            "red",
+            [
+                "h0"
+            ]
+        ],
+        [
+            "esp:19",
+            "rgb1:DIN",
+            "green",
+            [
+                "h0"
+            ]
+        ],
+        [
+            "esp:16",
+            "btn1:2.l",
+            "green",
+            [
+                "h0"
+            ]
+        ],
+        [
+            "esp:GND.2",
+            "btn1:1.l",
+            "black",
+            [
+                "v0"
             ]
         ]
     ],

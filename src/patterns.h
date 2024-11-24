@@ -870,7 +870,7 @@ SimplePatternList gPatterns = // this is list of patterns
         F_lying,
         RGBTunnel,
         Flower,
-        // Distortion_Waves_cilindr,   // i dont like than this looks yet )
+        Distortion_Waves_cilindr,
         colorwaves,
         DiagonalPattern,
         Distortion_Waves_plan,
@@ -886,5 +886,28 @@ SimplePatternList gPatterns = // this is list of patterns
         DigitalRain,
         fire2021,
 };
+
+const char *patternNames[] = {
+    "Cilindrical_Pattern",
+    "PlasmaBall",
+    "FireComets",
+    "F_lying",
+    "RGBTunnel",
+    "Flower",
+    "Distortion_Waves_cilindr",
+    "colorwaves",
+    "DiagonalPattern",
+    "Distortion_Waves_plan",
+    "FireButterfly",
+    "SoftTwinkles",
+    "Spiral2",
+    "pride",
+    "RGB_Caleidoscope2",
+    "RGB_Caleidoscope1",
+    "Swirl",
+    "RGB_hiphotic",
+    "Spiral",
+    "DigitalRain",
+    "fire2021"};
 
 #endif
