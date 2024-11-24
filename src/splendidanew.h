@@ -71,7 +71,7 @@ void FadeIn(byte steps);
 
 // Constants
 #define SECONDS_PER_PALETTE 10
-#define SECONDS_PER_PATTERN 30
+#define SECONDS_PER_PATTERN 45
 #define BLEND_SPEED 16
 #define BLEND_INTERVAL_MS 40
 

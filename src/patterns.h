@@ -98,7 +98,8 @@ void DiagonalPattern()
       int ledsindex = XY_fibon_PLANAR(i, j);
       if (ledsindex == lastSafeIndex)
         continue;
-      leds[ledsindex].setHue((i << 3) + (j << 3) + ms);
+      CRGB newcolor = ColorFromPalette(gCurrentPalette, (i << 3) + (j << 3) + ms, 255);
+      leds[ledsindex] = newcolor;
     }
   }
 }

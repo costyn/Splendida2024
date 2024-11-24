@@ -56,7 +56,7 @@ void printPatternAndPalette()
 {
   Serial.print("Pattern: ");
   Serial.print(patternNames[gCurrentPatternNumber]);
-  Serial.print(" Palette: ");
+  Serial.print("\tPalette: ");
   Serial.println(paletteNames[gCurrentPaletteNumber]);
 }
 
@@ -76,7 +76,6 @@ void initializeLEDs()
   FastLED.addLeds<LED_TYPE, DATA_PIN, COLOR_ORDER>(leds, NUM_LEDS);
   FastLED.addLeds<LED_TYPE, ATOMLED_PIN, COLOR_ORDER>(statled, 1);
   FastLED.setMaxPowerInVoltsAndMilliamps(5, MAX_POWER_MILLIAMPS);
-  FastLED.setBrightness(splendidaBrightness);
   FastLED.clear();
   gTargetPalette = gGradientPalettes[random8(gGradientPaletteCount)]; // Choose random palette on start
 }
@@ -134,7 +133,8 @@ static void oneClick()
   Serial.println("Clicked! Next pattern. automode OFF");
 
   gCurrentPatternNumber = (gCurrentPatternNumber + 1 + ARRAY_SIZE(gPatterns)) % ARRAY_SIZE(gPatterns); // next effect
-  InitNeeded = 1;                                                                                      // flag if init something need
+  InitNeeded = 1;
+  printPatternAndPalette();
   previousMillis = millis();
   automode = false;
   statled[0].setHue(0);
