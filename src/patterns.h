@@ -847,7 +847,7 @@ void SoftTwinkles()
   int j = random16(NUM_LEDS);
   if (!leds[j])
   {
-    leds[j] = ColorFromPalette(gCurrentPalette, random8(), 255);
+    leds[j].b = 2;
   }
   j = random16(NUM_LEDS);
   if (leds[j].r & 1)

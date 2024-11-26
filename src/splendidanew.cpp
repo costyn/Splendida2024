@@ -189,7 +189,7 @@ void readPotentiometers()
 {
   static int lastMappedBrightness = 0;
 
-  int speedPot = analogRead(SPEED_POT_PIN);
+  // int speedPot = analogRead(SPEED_POT_PIN); // janky
   int brightnessPot = analogRead(BRIGHTNESS_POT_PIN);
 
   smoothedBrightnessPot += brightnessPot;
