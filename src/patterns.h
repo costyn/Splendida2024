@@ -389,6 +389,7 @@ byte code(int x, int y, int t)
 void RGBTunnel()
 {
   int t = millis() >> 3;
+
   for (byte y = 0; y < NUM_ROWS_PLANAR; y++)
   {
     for (byte x = 0; x < NUM_COLS_PLANAR; x++)
@@ -846,7 +847,7 @@ void SoftTwinkles()
   int j = random16(NUM_LEDS);
   if (!leds[j])
   {
-    leds[j] = ColorFromPalette(gCurrentPalette, random8(), 255);
+    leds[j].b = 2;
   }
   j = random16(NUM_LEDS);
   if (leds[j].r & 1)

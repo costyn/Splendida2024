@@ -21,9 +21,20 @@
 // Setup function
 void setup()
 {
+  M5.begin(true, false, true);
+  pinMode(GPIO_NUM_34, INPUT);
+  gpio_pulldown_dis(GPIO_NUM_23);
+  gpio_pullup_dis(GPIO_NUM_23);
+  pinMode(GPIO_NUM_33, INPUT);
+
+  pinMode(BRIGHTNESS_POT_PIN, INPUT);
+  pinMode(SPEED_POT_PIN, INPUT);
+
   initializeSerial();
   initializeLEDs();
   initializeButton();
+
+  readPotentiometers(); // set initial brightness
 }
 
 // Loop function
@@ -32,16 +43,19 @@ void loop()
   handleButton();
   changePalette();
   blendPalette();
+  readPotentiometers();
 
   EVERY_N_SECONDS(SECONDS_PER_PATTERN)
-  { // speed of change patterns periodically
+  {
     if (automode)
     {
+      fadingBrightness = true;
       FadeOut(150);                                                                // fade out current effect
       gCurrentPatternNumber = (gCurrentPatternNumber + 1) % ARRAY_SIZE(gPatterns); // next effect
       printPatternAndPalette();
       InitNeeded = 1; // flag if init something need
       FadeIn(200);    // fade in current effect
+      fadingBrightness = false;
     }
   }
 
@@ -171,4 +185,25 @@ void FadeIn(byte steps)
     FastLED.show();
     delay(10);
   }
+}
+
+void readPotentiometers()
+{
+  static int lastMappedBrightness = 0;
+
+  // int speedPot = analogRead(SPEED_POT_PIN); // janky
+  int brightnessPot = analogRead(BRIGHTNESS_POT_PIN);
+
+  smoothedBrightnessPot += brightnessPot;
+
+  int mappedBrightness = map(smoothedBrightnessPot.get_avg(), 4096, 0, 0, 150);
+  if (lastMappedBrightness != mappedBrightness && !fadingBrightness)
+  {
+    FastLED.setBrightness(lastMappedBrightness);
+    lastMappedBrightness = mappedBrightness;
+    Serial.print("Setting Brightness: ");
+    Serial.println(mappedBrightness);
+  }
+
+  // Serial.println(smoothedSpeed);
 }

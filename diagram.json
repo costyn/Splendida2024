@@ -14,7 +14,7 @@
             "type": "wokwi-splendida",
             "id": "neopixels",
             "top": 0,
-            "left": -133.04,
+            "left": -123.44,
             "attrs": {
                 "pixels": "256"
             }
@@ -36,6 +36,20 @@
             "attrs": {
                 "color": "green"
             }
+        },
+        {
+            "type": "wokwi-potentiometer",
+            "id": "pot1",
+            "top": 267.5,
+            "left": 57.4,
+            "attrs": {}
+        },
+        {
+            "type": "wokwi-potentiometer",
+            "id": "pot2",
+            "top": 267.5,
+            "left": 182.2,
+            "attrs": {}
         }
     ],
     "connections": [
@@ -110,6 +124,54 @@
         [
             "esp:GND.2",
             "btn1:1.l",
+            "black",
+            [
+                "v0"
+            ]
+        ],
+        [
+            "esp:12",
+            "pot1:SIG",
+            "green",
+            [
+                "h0"
+            ]
+        ],
+        [
+            "esp:13",
+            "pot2:SIG",
+            "green",
+            [
+                "h0"
+            ]
+        ],
+        [
+            "pot2:GND",
+            "esp:GND.1",
+            "black",
+            [
+                "v0"
+            ]
+        ],
+        [
+            "pot2:VCC",
+            "esp:3V3",
+            "red",
+            [
+                "v0"
+            ]
+        ],
+        [
+            "pot1:VCC",
+            "esp:3V3",
+            "red",
+            [
+                "v0"
+            ]
+        ],
+        [
+            "pot1:GND",
+            "esp:GND.1",
             "black",
             [
                 "v0"
