@@ -14,25 +14,26 @@
 // long press activate Automode ON
 
 #include <Arduino.h>
+#include <M5Atom.h>
 #include "OneButton.h" // https://github.com/mathertel/OneButton
 #include <FastLED.h>
 #include <Smooth.h>
 
 // Emulator
-#define DATA_PIN 26           // set your leds datapin   change to 32 for m5 atom lite
-#define ATOMLED_PIN 19        // set your leds datapin   change to 27 for m5 atom lite
-#define BUTTON_PIN_INPUT 16   // button pin              change to 39 for m5 atom lite
-#define EXTRA_BUTTON_PIN 22   // button pin              change to 39 for m5 atom lite
-#define BRIGHTNESS_POT_PIN 12 // Brightness potentiometer pin
-#define SPEED_POT_PIN 13      // Speed potentiometer pin
+// #define DATA_PIN 26           // set your leds datapin   change to 32 for m5 atom lite
+// #define ATOMLED_PIN 19        // set your leds datapin   change to 27 for m5 atom lite
+// #define BUTTON_PIN_INPUT 16   // button pin              change to 39 for m5 atom lite
+// #define EXTRA_BUTTON_PIN 22   // button pin              change to 39 for m5 atom lite
+// #define BRIGHTNESS_POT_PIN 12 // Brightness potentiometer pin
+// #define SPEED_POT_PIN 13      // Speed potentiometer pin
 
 // Atom Matrix M5
-// #define DATA_PIN 26         // set your leds datapin   change to 32 for m5 atom lite
-// #define ATOMLED_PIN 27      // set your leds datapin   change to 27 for m5 atom lite
-// #define BUTTON_PIN_INPUT 39 // button pin              change to 39 for m5 atom lite
-// #define EXTRA_BUTTON_PIN 22   // button pin              change to 39 for m5 atom lite
-// #define BRIGHTNESS_POT_PIN 19 // Brightness potentiometer pin
-// #define SPEED_POT_PIN 23      // Speed potentiometer pin
+#define DATA_PIN 26                    // set your leds datapin   change to 32 for m5 atom lite
+#define ATOMLED_PIN 27                 // set your leds datapin   change to 27 for m5 atom lite
+#define BUTTON_PIN_INPUT 39            // button pin              change to 39 for m5 atom lite
+#define EXTRA_BUTTON_PIN 22            // button pin              change to 39 for m5 atom lite
+#define BRIGHTNESS_POT_PIN GPIO_NUM_34 // Brightness potentiometer pin
+#define SPEED_POT_PIN GPIO_NUM_33      // Speed potentiometer pin
 
 #define LED_TYPE WS2812B // leds type
 #define COLOR_ORDER GRB  // color order of leds
@@ -56,7 +57,7 @@
 #define BLEND_INTERVAL_MS 40
 
 // Potentiometers
-#define SMOOTHED_SAMPLE_SIZE 10
+#define SMOOTHED_SAMPLE_SIZE 20
 Smooth smoothedSpeedPot(SMOOTHED_SAMPLE_SIZE);
 Smooth smoothedBrightnessPot(SMOOTHED_SAMPLE_SIZE);
 
@@ -74,6 +75,7 @@ unsigned long currentMillis = 0;
 boolean automode = true; // change to false if you dont want automode on start
 byte InitNeeded = 1;
 byte splendidaBrightness = 60;
+boolean fadingBrightness = false;
 
 uint8_t gCurrentPatternNumber = 0; // Index number of which pattern is current
 

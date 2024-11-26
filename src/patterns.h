@@ -388,9 +388,7 @@ byte code(int x, int y, int t)
 
 void RGBTunnel()
 {
-
-  int speed = map(round(smoothedSpeedPot.get_avg()), 0, 4096, 12, 1); // Speed control variable, higher = faster
-  int t = millis() >> speed;                                          // Using speed to control how fast time advances
+  int t = millis() >> 3;
 
   for (byte y = 0; y < NUM_ROWS_PLANAR; y++)
   {
