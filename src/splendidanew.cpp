@@ -32,9 +32,10 @@ void loop()
   handleButton();
   changePalette();
   blendPalette();
+  readPotentiometers();
 
   EVERY_N_SECONDS(SECONDS_PER_PATTERN)
-  { // speed of change patterns periodically
+  {
     if (automode)
     {
       FadeOut(150);                                                                // fade out current effect
@@ -171,4 +172,25 @@ void FadeIn(byte steps)
     FastLED.show();
     delay(10);
   }
+}
+
+void readPotentiometers()
+{
+  static int lastSmoothedBrightness = 0;
+
+  int speedPot = analogRead(SPEED_POT_PIN);
+  int brightnessPot = analogRead(BRIGHTNESS_POT_PIN);
+
+  int smoothedSpeed = smoothedSpeedPot += speedPot;
+  int smoothedBrightness = smoothedBrightnessPot += brightnessPot;
+
+  if (lastSmoothedBrightness != smoothedBrightness)
+  {
+    FastLED.setBrightness(map(smoothedBrightness, 0, 1023, 5, 255));
+    lastSmoothedBrightness = smoothedBrightness;
+    Serial.print("Setting Brightness: ");
+    Serial.println(smoothedBrightness);
+  }
+
+  // Serial.println(smoothedSpeed);
 }
