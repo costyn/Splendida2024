@@ -33,6 +33,8 @@ void setup()
   initializeSerial();
   initializeLEDs();
   initializeButton();
+
+  readPotentiometers(); // set initial brightness
 }
 
 // Loop function
