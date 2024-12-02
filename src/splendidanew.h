@@ -74,7 +74,6 @@ unsigned long previousMillis = 0;
 unsigned long currentMillis = 0;
 boolean automode = true; // change to false if you dont want automode on start
 byte InitNeeded = 1;
-byte splendidaBrightness = 60;
 boolean fadingBrightness = false;
 
 uint8_t gCurrentPatternNumber = 0; // Index number of which pattern is current
@@ -82,8 +81,8 @@ uint8_t gCurrentPatternNumber = 0; // Index number of which pattern is current
 static void oneClick();
 static void doubleClick();
 static void longPress();
-void FadeOut(byte steps);
-void FadeIn(byte steps);
+void FadeOut(uint8_t steps);
+void FadeIn(uint8_t steps);
 
 #include "palettes.h"
 #include "tables.h"

@@ -98,7 +98,7 @@ void initializeLEDs()
 void initializeButton()
 {
   button.attachClick(oneClick);
-  button.attachDoubleClick(doubleClick);
+  // button.attachDoubleClick(doubleClick);
   button.attachDuringLongPress(longPress);
   // button.setDebounceTicks(80);
 }
@@ -130,18 +130,6 @@ void blendPalette()
   }
 }
 
-static void doubleClick()
-{
-  Serial.println("DoubleClicked! next bright");
-  static byte brIndex = 3;
-  static byte bright[] = {0, 16, 32, 64, 96, 128, 170}; // 7 steps
-  brIndex = (brIndex + 1) % 7;
-  splendidaBrightness = bright[brIndex];
-  FastLED.setBrightness(splendidaBrightness);
-  Serial.println(splendidaBrightness);
-  statled[0].setHue(150);
-}
-
 static void oneClick()
 {
   Serial.println("Clicked! Next pattern. automode OFF");
@@ -163,25 +151,29 @@ static void longPress()
   statled[0].setHue(100);
 }
 
-void FadeOut(byte steps)
+void FadeOut(uint8_t steps)
 {
-  for (int i = 0; i <= steps; i++)
+  uint8_t startBright = smoothedBrightnessPot.get_avg();
+
+  for (int i = 0; i < steps; i++)
   {
     gPatterns[gCurrentPatternNumber]();
-    byte fadeOut = lerp8by8(splendidaBrightness, 0, 255 * i / steps);
-    FastLED.setBrightness(fadeOut);
+    uint8_t brightness = lerp8by8(startBright, 0, (255 * i) / steps);
+    FastLED.setBrightness(brightness);
     FastLED.show();
     delay(10);
   }
 }
 
-void FadeIn(byte steps)
+void FadeIn(uint8_t steps)
 {
-  for (int i = steps + 1; i--; i >= 0)
+  uint8_t targetBright = smoothedBrightnessPot.get_avg();
+
+  for (int i = 0; i < steps; i++)
   {
     gPatterns[gCurrentPatternNumber]();
-    byte fadeOut = lerp8by8(splendidaBrightness, 0, 255 * i / steps);
-    FastLED.setBrightness(fadeOut);
+    uint8_t brightness = lerp8by8(0, targetBright, (255 * i) / steps);
+    FastLED.setBrightness(brightness);
     FastLED.show();
     delay(10);
   }
