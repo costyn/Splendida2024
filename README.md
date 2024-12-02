@@ -1,9 +1,9 @@
-# Fall 2021 Splendida Firmware by LDirko
+# Splendida 2024
 
 ![Splendida in Action](https://raw.githubusercontent.com/costyn/Splendida2024/refs/heads/main/extras/Seamless%20Paper%20Diffusor/Completed.jpeg)
 
 ## Introduction
-This is a "fork" of https://github.com/ldirko/New-Colorful-Splendida-256-firmware- which I've turned into a PlatformIO project.
+This is a "fork" of https://github.com/ldirko/New-Colorful-Splendida-256-firmware- by LDirko, which I've turned into a PlatformIO project.
 
 Also adapted this README for legibility.
 
