@@ -13,27 +13,35 @@
 // double click change bright in loop 0..maxbright with 7 steps. not affect to Automode
 // long press activate Automode ON
 
+#define M5ATOM
+
 #include <Arduino.h>
+#ifdef M5ATOM
 #include <M5Atom.h>
+#endif
 #include "OneButton.h" // https://github.com/mathertel/OneButton
 #include <FastLED.h>
 #include <Smooth.h>
 
 // Emulator
-// #define DATA_PIN 26           // set your leds datapin   change to 32 for m5 atom lite
-// #define ATOMLED_PIN 19        // set your leds datapin   change to 27 for m5 atom lite
-// #define BUTTON_PIN_INPUT 16   // button pin              change to 39 for m5 atom lite
-// #define EXTRA_BUTTON_PIN 22   // button pin              change to 39 for m5 atom lite
-// #define BRIGHTNESS_POT_PIN 12 // Brightness potentiometer pin
-// #define SPEED_POT_PIN 13      // Speed potentiometer pin
+#ifndef M5ATOM
+#define DATA_PIN 26           // set your leds datapin   change to 32 for m5 atom lite
+#define ATOMLED_PIN 19        // set your leds datapin   change to 27 for m5 atom lite
+#define BUTTON_PIN_INPUT 16   // button pin              change to 39 for m5 atom lite
+#define EXTRA_BUTTON_PIN 22   // button pin              change to 39 for m5 atom lite
+#define BRIGHTNESS_POT_PIN 12 // Brightness potentiometer pin
+#define SPEED_POT_PIN 13      // Speed potentiometer pin
+#endif
 
 // Atom Matrix M5
+#ifdef M5ATOM
 #define DATA_PIN 26                    // set your leds datapin   change to 32 for m5 atom lite
 #define ATOMLED_PIN 27                 // set your leds datapin   change to 27 for m5 atom lite
 #define BUTTON_PIN_INPUT 39            // button pin              change to 39 for m5 atom lite
 #define EXTRA_BUTTON_PIN 22            // button pin              change to 39 for m5 atom lite
 #define BRIGHTNESS_POT_PIN GPIO_NUM_34 // Brightness potentiometer pin
 #define SPEED_POT_PIN GPIO_NUM_33      // Speed potentiometer pin
+#endif
 
 #define LED_TYPE WS2812B // leds type
 #define COLOR_ORDER GRB  // color order of leds

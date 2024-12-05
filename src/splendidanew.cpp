@@ -18,14 +18,29 @@
 
 #include "splendidanew.h"
 
+enum FadeState
+{
+  FADE_NONE,
+  FADING_OUT,
+  FADING_IN
+};
+
+void changePattern();
+
+FadeState fadeState = FADE_NONE;
+unsigned long fadeStartTime = 0;
+const unsigned long FADE_DURATION = 2000; // 1 second fade
+
 // Setup function
 void setup()
 {
+#ifdef M5ATOM
   M5.begin(true, false, true);
   pinMode(GPIO_NUM_34, INPUT);
   gpio_pulldown_dis(GPIO_NUM_23);
   gpio_pullup_dis(GPIO_NUM_23);
   pinMode(GPIO_NUM_33, INPUT);
+#endif
 
   pinMode(BRIGHTNESS_POT_PIN, INPUT);
   pinMode(SPEED_POT_PIN, INPUT);
@@ -49,13 +64,7 @@ void loop()
   {
     if (automode)
     {
-      fadingBrightness = true;
-      FadeOut(150);                                                                // fade out current effect
-      gCurrentPatternNumber = (gCurrentPatternNumber + 1) % ARRAY_SIZE(gPatterns); // next effect
-      printPatternAndPalette();
-      InitNeeded = 1; // flag if init something need
-      FadeIn(200);    // fade in current effect
-      fadingBrightness = false;
+      changePattern();
     }
   }
 
@@ -63,7 +72,6 @@ void loop()
   statled[0].fadeToBlackBy(1);
 
   FastLED.show();
-  // FastLED.delay(1000 / 60); // Add a delay to control the frame rate
 }
 
 void printPatternAndPalette()
@@ -133,10 +141,7 @@ void blendPalette()
 static void oneClick()
 {
   Serial.println("Clicked! Next pattern. automode OFF");
-
-  gCurrentPatternNumber = (gCurrentPatternNumber + 1 + ARRAY_SIZE(gPatterns)) % ARRAY_SIZE(gPatterns); // next effect
-  InitNeeded = 1;
-  printPatternAndPalette();
+  changePattern();
   previousMillis = millis();
   automode = false;
   statled[0].setHue(0);
@@ -153,29 +158,72 @@ static void longPress()
 
 void FadeOut(uint8_t steps)
 {
-  uint8_t startBright = smoothedBrightnessPot.get_avg();
-
-  for (int i = 0; i < steps; i++)
-  {
-    gPatterns[gCurrentPatternNumber]();
-    uint8_t brightness = lerp8by8(startBright, 0, (255 * i) / steps);
-    FastLED.setBrightness(brightness);
-    FastLED.show();
-    delay(10);
-  }
+  Serial.println("FadeOut");
+  fadeState = FADING_OUT;
+  fadeStartTime = millis();
+  gTargetPalette = CRGBPalette16(CRGB::Black);
 }
 
 void FadeIn(uint8_t steps)
 {
-  uint8_t targetBright = smoothedBrightnessPot.get_avg();
+  Serial.println("FadeIn");
+  fadeState = FADING_IN;
+  fadeStartTime = millis();
+  gTargetPalette = gGradientPalettes[gCurrentPaletteNumber];
+}
 
-  for (int i = 0; i < steps; i++)
+// Add this function to check fade completion
+bool isFadeComplete()
+{
+  if (fadeState == FADE_NONE)
+    return true;
+
+  unsigned long elapsed = millis() - fadeStartTime;
+  if (elapsed >= FADE_DURATION)
   {
-    gPatterns[gCurrentPatternNumber]();
-    uint8_t brightness = lerp8by8(0, targetBright, (255 * i) / steps);
-    FastLED.setBrightness(brightness);
+    fadeState = FADE_NONE;
+    return true;
+  }
+
+  // For more precise checking, compare current palette with target
+  bool isComplete = true;
+  for (int i = 0; i < 16; i++)
+  {
+    if (gCurrentPalette[i] != gTargetPalette[i])
+    {
+      isComplete = false;
+      break;
+    }
+  }
+
+  if (isComplete)
+  {
+    fadeState = FADE_NONE;
+  }
+
+  return isComplete;
+}
+
+// Usage example in pattern transition:
+void changePattern()
+{
+  FadeOut(255);
+  while (!isFadeComplete())
+  {
+    blendPalette();
     FastLED.show();
-    delay(10);
+  }
+
+  // Move pattern increment here
+  gCurrentPatternNumber = (gCurrentPatternNumber + 1) % ARRAY_SIZE(gPatterns);
+  InitNeeded = 1;
+  printPatternAndPalette();
+
+  FadeIn(255);
+  while (!isFadeComplete())
+  {
+    blendPalette();
+    FastLED.show();
   }
 }
 
@@ -191,10 +239,10 @@ void readPotentiometers()
   int mappedBrightness = map(smoothedBrightnessPot.get_avg(), 4096, 0, 0, 150);
   if (lastMappedBrightness != mappedBrightness && !fadingBrightness)
   {
-    FastLED.setBrightness(lastMappedBrightness);
     lastMappedBrightness = mappedBrightness;
     Serial.print("Setting Brightness: ");
     Serial.println(mappedBrightness);
+    FastLED.setBrightness(mappedBrightness);
   }
 
   // Serial.println(smoothedSpeed);
