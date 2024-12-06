@@ -18,56 +18,51 @@
 
 #include "splendidanew.h"
 
-enum FadeState
-{
-  FADE_NONE,
-  FADING_OUT,
-  FADING_IN
-};
-
-void changePattern();
-
-FadeState fadeState = FADE_NONE;
-unsigned long fadeStartTime = 0;
-const unsigned long FADE_DURATION = 2000; // 1 second fade
-
 // Setup function
 void setup()
 {
 #ifdef M5ATOM
-  M5.begin(true, false, true);
-  pinMode(GPIO_NUM_34, INPUT);
-  gpio_pulldown_dis(GPIO_NUM_23);
-  gpio_pullup_dis(GPIO_NUM_23);
-  pinMode(GPIO_NUM_33, INPUT);
+  // M5.begin(true, false, true);
+  // pinMode(GPIO_NUM_34, INPUT);
+  // gpio_pulldown_dis(GPIO_NUM_23);
+  // gpio_pullup_dis(GPIO_NUM_23);
+  // pinMode(GPIO_NUM_33, INPUT);
 #endif
-
-  pinMode(BRIGHTNESS_POT_PIN, INPUT);
-  pinMode(SPEED_POT_PIN, INPUT);
+  // pinMode(BRIGHTNESS_POT_PIN, INPUT);
+  // pinMode(SPEED_POT_PIN, INPUT);
 
   initializeSerial();
   initializeLEDs();
   initializeButton();
 
-  readPotentiometers(); // set initial brightness
+  _runner.init();
+  _runner.addTask(_taskChangeToBrightness);
+  _runner.addTask(_taskRunPattern);
+  _runner.addTask(_taskChangePalette);
+  _runner.addTask(_taskChangePattern);
+  _runner.addTask(_taskHandleButton);
+  _runner.addTask(_taskReadPotentiometers);
+  _runner.addTask(_taskBlendPalette);
+  _runner.addTask(_taskFadeOut);
+  _runner.addTask(_taskFadeIn);
+
+  _taskChangeToBrightness.enable();
+  _taskRunPattern.enable();
+  _taskChangePalette.enable();
+  _taskChangePattern.enable();
+  _taskHandleButton.enable();
+  _taskReadPotentiometers.enable();
+  _taskBlendPalette.enable();
 }
 
 // Loop function
 void loop()
 {
-  handleButton();
-  changePalette();
-  blendPalette();
-  readPotentiometers();
+  _runner.execute();
+}
 
-  EVERY_N_SECONDS(SECONDS_PER_PATTERN)
-  {
-    if (automode)
-    {
-      changePattern();
-    }
-  }
-
+void runPattern()
+{
   gPatterns[gCurrentPatternNumber](); // play current pattern
   statled[0].fadeToBlackBy(1);
 
@@ -120,22 +115,15 @@ void handleButton()
 // Change Palette Periodically
 void changePalette()
 {
-  EVERY_N_SECONDS(SECONDS_PER_PALETTE)
-  {
-    gCurrentPaletteNumber = random8(gGradientPaletteCount);
-    gTargetPalette = gGradientPalettes[gCurrentPaletteNumber];
-
-    printPatternAndPalette();
-  }
+  gCurrentPaletteNumber = random8(gGradientPaletteCount);
+  gTargetPalette = gGradientPalettes[gCurrentPaletteNumber];
+  printPatternAndPalette();
 }
 
 // Blend Current Palette to Target Palette
 void blendPalette()
 {
-  EVERY_N_MILLISECONDS(BLEND_INTERVAL_MS)
-  {
-    nblendPaletteTowardPalette(gCurrentPalette, gTargetPalette, BLEND_SPEED);
-  }
+  nblendPaletteTowardPalette(gCurrentPalette, gTargetPalette, BLEND_SPEED);
 }
 
 static void oneClick()
@@ -156,75 +144,39 @@ static void longPress()
   statled[0].setHue(100);
 }
 
-void FadeOut(uint8_t steps)
-{
-  Serial.println("FadeOut");
-  fadeState = FADING_OUT;
-  fadeStartTime = millis();
-  gTargetPalette = CRGBPalette16(CRGB::Black);
-}
-
-void FadeIn(uint8_t steps)
-{
-  Serial.println("FadeIn");
-  fadeState = FADING_IN;
-  fadeStartTime = millis();
-  gTargetPalette = gGradientPalettes[gCurrentPaletteNumber];
-}
-
-// Add this function to check fade completion
-bool isFadeComplete()
-{
-  if (fadeState == FADE_NONE)
-    return true;
-
-  unsigned long elapsed = millis() - fadeStartTime;
-  if (elapsed >= FADE_DURATION)
-  {
-    fadeState = FADE_NONE;
-    return true;
-  }
-
-  // For more precise checking, compare current palette with target
-  bool isComplete = true;
-  for (int i = 0; i < 16; i++)
-  {
-    if (gCurrentPalette[i] != gTargetPalette[i])
-    {
-      isComplete = false;
-      break;
-    }
-  }
-
-  if (isComplete)
-  {
-    fadeState = FADE_NONE;
-  }
-
-  return isComplete;
-}
-
 // Usage example in pattern transition:
 void changePattern()
 {
-  FadeOut(255);
-  while (!isFadeComplete())
-  {
-    blendPalette();
-    FastLED.show();
-  }
-
-  // Move pattern increment here
   gCurrentPatternNumber = (gCurrentPatternNumber + 1) % ARRAY_SIZE(gPatterns);
   InitNeeded = 1;
   printPatternAndPalette();
+}
 
-  FadeIn(255);
-  while (!isFadeComplete())
+void fadeOut()
+{
+  static uint8_t currentBrightness = _currentBrightness;
+  _taskReadPotentiometers.disable();
+  _taskChangeToBrightness.disable();
+  currentBrightness--;
+  if (currentBrightness == 0)
   {
-    blendPalette();
-    FastLED.show();
+    _taskFadeOut.disable();
+    _taskFadeIn.enable();
   }
+  FastLED.setBrightness(currentBrightness);
+}
+
+void fadeIn()
+{
+  static uint8_t currentBrightness = 0;
+  currentBrightness++;
+  if (currentBrightness == _currentBrightness)
+  {
+    _taskReadPotentiometers.enable();
+    _taskChangeToBrightness.enable();
+    _taskFadeIn.disable();
+  }
+  FastLED.setBrightness(currentBrightness);
 }
 
 void readPotentiometers()
@@ -236,14 +188,60 @@ void readPotentiometers()
 
   smoothedBrightnessPot += brightnessPot;
 
-  int mappedBrightness = map(smoothedBrightnessPot.get_avg(), 4096, 0, 0, 150);
-  if (lastMappedBrightness != mappedBrightness && !fadingBrightness)
+  int mappedBrightness = map(smoothedBrightnessPot.get_avg(), 0, 4096, 0, 150);
+  if (lastMappedBrightness != mappedBrightness)
   {
+    // _taskReadPotentiometers.disable(); // Disable the task if we're already changing brightness
+    _targetBrightness = mappedBrightness;
+    _taskChangeToBrightness.enable();
     lastMappedBrightness = mappedBrightness;
-    Serial.print("Setting Brightness: ");
-    Serial.println(mappedBrightness);
-    FastLED.setBrightness(mappedBrightness);
   }
 
-  // Serial.println(smoothedSpeed);
+  // Serial.println(smoothedBrightnessPot.get_avg());
+}
+
+boolean changeToTarget(uint8_t target, uint8_t &current)
+{
+  if (target < current)
+  {
+    current--;
+  }
+  else if (target > current)
+  {
+    current++;
+  }
+
+  return target == current;
+}
+
+// Generic function that can be used for other parameters too
+void changeToBrightness()
+{
+  constexpr const char *SGN = "ChangeToBrightness()";
+  Serial.printf("%s: %s: Adjusting Brightness: %u -> %u\n", timeToString().c_str(), SGN, _currentBrightness, _targetBrightness);
+
+  if (changeToTarget(_targetBrightness, _currentBrightness))
+  {
+    _taskChangeToBrightness.disable();
+    Serial.printf("%s: %s: Brightness adjusted to %u\n", timeToString().c_str(), SGN, _currentBrightness);
+    _taskReadPotentiometers.enable();
+  }
+
+  FastLED.setBrightness(_currentBrightness);
+}
+
+std::string timeToString()
+{
+  char myString[20];
+  unsigned long nowMillis = millis();
+  unsigned int seconds = nowMillis / 1000;
+  unsigned int remainder = nowMillis % 1000;
+  int days = seconds / 86400;
+  seconds %= 86400;
+  byte hours = seconds / 3600;
+  seconds %= 3600;
+  byte minutes = seconds / 60;
+  seconds %= 60;
+  snprintf(myString, 20, "%02d:%02d:%02d:%02d.%03d", days, hours, minutes, seconds, remainder);
+  return std::string(myString);
 }

@@ -17,11 +17,12 @@
 
 #include <Arduino.h>
 #ifdef M5ATOM
-#include <M5Atom.h>
+// #include <M5Atom.h>
 #endif
 #include "OneButton.h" // https://github.com/mathertel/OneButton
 #include <FastLED.h>
 #include <Smooth.h>
+#include <TaskScheduler.h>
 
 // Emulator
 #ifndef M5ATOM
@@ -60,7 +61,7 @@
 
 // Animation Constants
 #define SECONDS_PER_PALETTE 10
-#define SECONDS_PER_PATTERN 45
+#define SECONDS_PER_PATTERN 20
 #define BLEND_SPEED 16
 #define BLEND_INTERVAL_MS 40
 
@@ -84,13 +85,20 @@ boolean automode = true; // change to false if you dont want automode on start
 byte InitNeeded = 1;
 boolean fadingBrightness = false;
 
+uint8_t _currentBrightness = 150;
+uint8_t _targetBrightness = _currentBrightness;
+
 uint8_t gCurrentPatternNumber = 0; // Index number of which pattern is current
+
+void changeToBrightness();
+void runPattern();
 
 static void oneClick();
 static void doubleClick();
 static void longPress();
-void FadeOut(uint8_t steps);
-void FadeIn(uint8_t steps);
+void fadeOut();
+void fadeIn();
+std::string timeToString();
 
 #include "palettes.h"
 #include "tables.h"
@@ -105,5 +113,24 @@ void readPotentiometers();
 void handleButton();
 void changePalette();
 void blendPalette();
+void changePattern();
+
+enum FadeState
+{
+    FADE_NONE,
+    FADING_OUT,
+    FADING_IN
+};
+
+Scheduler _runner;
+Task _taskChangeToBrightness(50 * TASK_MILLISECOND, TASK_FOREVER, &changeToBrightness);
+Task _taskRunPattern(10 * TASK_MILLISECOND, TASK_FOREVER, &runPattern);
+Task _taskChangePalette(SECONDS_PER_PALETTE *TASK_SECOND, TASK_FOREVER, &changePalette);
+Task _taskChangePattern(SECONDS_PER_PATTERN *TASK_SECOND, TASK_FOREVER, &changePattern);
+Task _taskHandleButton(10 * TASK_MILLISECOND, TASK_FOREVER, &handleButton);
+Task _taskReadPotentiometers(100 * TASK_MILLISECOND, TASK_FOREVER, &readPotentiometers);
+Task _taskBlendPalette(BLEND_INTERVAL_MS *TASK_MILLISECOND, TASK_FOREVER, &blendPalette);
+Task _taskFadeOut(10 * TASK_MILLISECOND, TASK_ONCE, &fadeOut);
+Task _taskFadeIn(10 * TASK_MILLISECOND, TASK_ONCE, &fadeIn);
 
 #endif
