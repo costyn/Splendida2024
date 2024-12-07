@@ -909,11 +909,14 @@ void testCylinderMapping()
       if (index == lastSafeIndex || index >= NUM_LEDS)
         continue;
 
-      // Set color based on x-position to create a horizontal gradient
-      uint8_t hue = map(x, 0, NUM_COLS_CILINDR - 1, 0, 255);
+      // Calculate color index based on x-position
+      uint8_t colorIndex = map(x, 0, NUM_COLS_CILINDR - 1, 0, 255);
 
-      // Set LED color using HSV hue
-      leds[index] = CHSV(hue, 255, 255);
+      // Get color from the current palette
+      CRGB color = ColorFromPalette(gCurrentPalette, colorIndex);
+
+      // Set the LED color
+      leds[index] = color;
     }
   }
 }
@@ -966,6 +969,69 @@ void hypnoticSpiral()
   }
 }
 
+// void identifyLEDs()
+// {
+//   // Static variables to keep track of time and the current LED
+//   static uint32_t lastUpdateTime = 0;
+//   static uint16_t currentLEDNumber = 0;
+
+//   // Check if one second has passed
+//   if (millis() - lastUpdateTime >= 500)
+//   {
+//     lastUpdateTime = millis();
+
+//     // Clear all LEDs
+//     FastLED.clear();
+
+//     // Calculate x and y from the current LED number
+//     uint8_t x = currentLEDNumber % NUM_COLS_CILINDR;
+//     uint8_t y = currentLEDNumber / NUM_COLS_CILINDR;
+
+//     // Get LED index from coordinates
+//     uint16_t index = XY_CILINDR(x, y);
+
+//     // Check if the index is valid
+//     if (index != lastSafeIndex && index < NUM_LEDS)
+//     {
+//       // Light up the LED with a bright color
+//       leds[index] = CRGB::White;
+
+//       // Print LED information to the Serial Monitor
+//       Serial.print("Lighting up LED ");
+//       Serial.print(currentLEDNumber);
+//       Serial.print(" at index ");
+//       Serial.print(index);
+//       Serial.print(" (x: ");
+//       Serial.print(x);
+//       Serial.print(", y: ");
+//       Serial.print(y);
+//       Serial.println(")");
+//     }
+//     else
+//     {
+//       // Handle invalid index
+//       Serial.print("Invalid LED at number ");
+//       Serial.print(currentLEDNumber);
+//       Serial.print(" (x: ");
+//       Serial.print(x);
+//       Serial.print(", y: ");
+//       Serial.println(y);
+//     }
+
+//     // Update the LEDs
+//     FastLED.show();
+
+//     // Move to the next LED
+//     currentLEDNumber++;
+
+//     // Reset if we've reached the end
+//     if (currentLEDNumber >= NUM_COLS_CILINDR * NUM_ROWS_CILINDR)
+//     {
+//       currentLEDNumber = 0;
+//     }
+//   }
+// }
+
 // array pointers to used patterns______________________
 
 #define ARRAY_SIZE(A) (sizeof(A) / sizeof((A)[0]))
@@ -974,6 +1040,7 @@ typedef void (*SimplePatternList[])();
 SimplePatternList gPatterns = // this is list of patterns
     {
         Cilindrical_Pattern,
+        // identifyLEDs,
         testCylinderMapping,
         hypnoticSpiral,
         spiralCylinderWave,
@@ -1001,6 +1068,7 @@ SimplePatternList gPatterns = // this is list of patterns
 
 const char *patternNames[] = {
     "Cilindrical_Pattern",
+    // "identifyLEDs",
     "testCylinderMapping",
     "hypnoticSpiral",
     "spiralCylinderWave",
