@@ -92,6 +92,9 @@ uint8_t _targetBrightness = _currentBrightness;
 
 uint8_t gCurrentPatternNumber = 0; // Index number of which pattern is current
 
+float gTimeAccumulator = 0;
+uint8_t gSpeed = 8; // Adjust range as needed, controlled by pot
+
 void changeToBrightness();
 void runPattern();
 
@@ -132,7 +135,7 @@ FadeState fadeState = FADE_NONE;
 
 Scheduler _runner;
 Task _taskChangeToBrightness(10 * TASK_MILLISECOND, TASK_FOREVER, &changeToBrightness);
-Task _taskRunPattern(10 * TASK_MILLISECOND, TASK_FOREVER, &runPattern);
+Task _taskRunPattern(1 * TASK_MILLISECOND, TASK_FOREVER, &runPattern);
 Task _taskChangePalette(SECONDS_PER_PALETTE *TASK_SECOND, TASK_FOREVER, &changePalette);
 Task _taskChangePattern(SECONDS_PER_PATTERN *TASK_SECOND, TASK_FOREVER, &changePattern);
 Task _taskHandleButton(10 * TASK_MILLISECOND, TASK_FOREVER, &handleButton);

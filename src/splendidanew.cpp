@@ -39,7 +39,10 @@ void setup()
   _taskChangeToBrightness.enable();
   _taskRunPattern.enable();
   _taskChangePalette.enable();
-  _taskChangePattern.enable();
+  if (automode)
+  {
+    _taskChangePattern.enable();
+  }
   _taskHandleButton.enable();
   _taskReadPotentiometers.enable();
   _taskBlendPalette.enable();
@@ -53,9 +56,20 @@ void loop()
 
 void runPattern()
 {
-  gPatterns[gCurrentPatternNumber](); // play current pattern
-  statled[0].fadeToBlackBy(1);
+  // Update global time accumulator
+  // Use gSpeed to control the speed of the patterns
+  static unsigned long lastUpdate = 0;
+  unsigned long currentMillis = millis();
 
+  if (currentMillis - lastUpdate > 0)
+  {
+    gTimeAccumulator += (float)(currentMillis - lastUpdate) / gSpeed;
+    lastUpdate = currentMillis;
+  }
+
+  // Run pattern
+  gPatterns[gCurrentPatternNumber]();
+  statled[0].fadeToBlackBy(1);
   FastLED.show();
 }
 
@@ -127,8 +141,9 @@ void blendPalette()
 static void oneClick()
 {
   Serial.println("Clicked! Next pattern. automode OFF");
-  changePattern();
-  automode = false;
+  _taskChangePattern.enable();
+  _taskChangePattern.forceNextIteration();
+  _taskChangePattern.disable();
   statled[0].setHue(0);
 }
 
@@ -136,7 +151,7 @@ static void longPress()
 {
   Serial.println("Long press!");
   Serial.println("AutomodeOn");
-  automode = true;
+  _taskChangePattern.enable();
   statled[0].setHue(100);
 }
 
@@ -271,7 +286,7 @@ void changeToBrightness()
 {
 
   constexpr const char *SGN = "ChangeToBrightness()";
-  Serial.printf("%s: %s: Adjusting Brightness: %u -> %u\n", timeToString().c_str(), SGN, _currentBrightness, _targetBrightness);
+  // Serial.printf("%s: %s: Adjusting Brightness: %u -> %u\n", timeToString().c_str(), SGN, _currentBrightness, _targetBrightness);
 
   if (changeToTarget(_targetBrightness, _currentBrightness))
   {
