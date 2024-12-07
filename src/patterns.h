@@ -962,8 +962,11 @@ void testCylinderMapping()
 
 void testCylinderMapping2()
 {
-  const float waveSpeed = 0.1;  // Adjust for faster/slower waves
-  const float wavelength = 0.5; // Adjust for more/fewer waves
+  // Rotation speed
+  const float rotationSpeed = 0.001;
+
+  // Calculate rotation angle based on time
+  uint8_t scaledAngle = (uint8_t)(gTimeAccumulator * 0.333); // Adjust multiplier for speed
 
   for (uint8_t y = 0; y < NUM_ROWS_CILINDR; y++)
   {
@@ -973,18 +976,16 @@ void testCylinderMapping2()
       if (index == lastSafeIndex || index >= NUM_LEDS)
         continue;
 
-      // Calculate base hue from x position (keep gradient)
-      uint8_t hue = map(x, 0, NUM_COLS_CILINDR - 1, 0, 255);
+      // Calculate rotated x position
+      int16_t rotatedX = ((int16_t)x * cos8(scaledAngle) - (int16_t)y * sin8(scaledAngle)) >> 8;
 
-      // Calculate distance from (0,0)
-      float distance = sqrt(x * x + y * y);
+      // Map rotated position to hue
+      uint8_t hue = map(fmod(rotatedX, NUM_COLS_CILINDR),
+                        0, NUM_COLS_CILINDR - 1,
+                        0, 255);
 
-      // Create moving wave pattern
-      float wave = sin(distance * wavelength - gTimeAccumulator * waveSpeed);
-      uint8_t brightness = map(wave * 1000, -1000, 1000, 64, 255);
-
-      // Set LED color with wave-modulated brightness
-      leds[index] = CHSV(hue, 255, brightness);
+      // Set LED color using HSV hue
+      leds[index] = CHSV(hue, 255, 255);
     }
   }
 }
@@ -1140,7 +1141,7 @@ SimplePatternList gPatterns = // this is list of patterns
         // findCenter,
         testCylinderMapping2,
         DiagonalPattern,
-        testCylinderMapping,
+        // testCylinderMapping,
         hypnoticSpiral,
         spiralCylinderWave,
         PlasmaBall,
@@ -1170,7 +1171,7 @@ const char *patternNames[] = {
     // "findCenter",
     "testCylinderMapping2",
     "DiagonalPattern",
-    "testCylinderMapping",
+    // "testCylinderMapping",
     "hypnoticSpiral",
     "spiralCylinderWave",
     "PlasmaBall",

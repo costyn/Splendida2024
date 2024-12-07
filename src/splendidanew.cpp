@@ -39,7 +39,10 @@ void setup()
   _taskChangeToBrightness.enable();
   _taskRunPattern.enable();
   _taskChangePalette.enable();
-  _taskChangePattern.enable();
+  if (automode)
+  {
+    _taskChangePattern.enable();
+  }
   _taskHandleButton.enable();
   _taskReadPotentiometers.enable();
   _taskBlendPalette.enable();
@@ -138,8 +141,9 @@ void blendPalette()
 static void oneClick()
 {
   Serial.println("Clicked! Next pattern. automode OFF");
-  changePattern();
-  automode = false;
+  _taskChangePattern.enable();
+  _taskChangePattern.forceNextIteration();
+  _taskChangePattern.disable();
   statled[0].setHue(0);
 }
 
@@ -147,7 +151,7 @@ static void longPress()
 {
   Serial.println("Long press!");
   Serial.println("AutomodeOn");
-  automode = true;
+  _taskChangePattern.enable();
   statled[0].setHue(100);
 }
 
