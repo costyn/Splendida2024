@@ -962,9 +962,6 @@ void testCylinderMapping()
 
 void testCylinderMapping2()
 {
-  // Center coordinates
-  const float centerX = NUM_COLS_CILINDR / 2.0;
-  const float centerY = NUM_ROWS_CILINDR / 2.0;
   const float waveSpeed = 0.1;  // Adjust for faster/slower waves
   const float wavelength = 0.5; // Adjust for more/fewer waves
 
@@ -979,14 +976,12 @@ void testCylinderMapping2()
       // Calculate base hue from x position (keep gradient)
       uint8_t hue = map(x, 0, NUM_COLS_CILINDR - 1, 0, 255);
 
-      // Calculate distance from center for wave
-      float dx = x - centerX;
-      float dy = y - centerY;
-      float distance = sqrt(dx * dx + dy * dy);
+      // Calculate distance from (0,0)
+      float distance = sqrt(x * x + y * y);
 
       // Create moving wave pattern
       float wave = sin(distance * wavelength - gTimeAccumulator * waveSpeed);
-      uint8_t brightness = map(wave * 1000, -1000, 1000, 64, 255); // Keep some minimum brightness
+      uint8_t brightness = map(wave * 1000, -1000, 1000, 64, 255);
 
       // Set LED color with wave-modulated brightness
       leds[index] = CHSV(hue, 255, brightness);
@@ -1133,68 +1128,6 @@ void hypnoticSpiral()
 //   }
 // }
 
-void findCenter()
-{
-  FastLED.clear();
-
-  // Known center-adjacent LEDs
-  uint16_t centerLEDs[] = {1, 50, 75, 99, 147, 172, 196};
-  const uint8_t numCenterLEDs = 7;
-
-  // Calculate average position
-  float sumX = 0, sumY = 0;
-  for (uint8_t i = 0; i < numCenterLEDs; i++)
-  {
-    for (uint8_t y = 0; y < NUM_ROWS_CILINDR; y++)
-    {
-      for (uint8_t x = 0; x < NUM_COLS_CILINDR; x++)
-      {
-        if (XY_CILINDR(x, y) == centerLEDs[i])
-        {
-          sumX += x;
-          sumY += y;
-          break;
-        }
-      }
-    }
-  }
-
-  float currentCenterX = sumX / numCenterLEDs;
-  float currentCenterY = sumY / numCenterLEDs;
-
-  Serial.printf("Calculated center at: (%.1f, %.1f)\n", currentCenterX, currentCenterY);
-
-  // Light up test pattern
-  for (uint8_t y = 0; y < NUM_ROWS_CILINDR; y++)
-  {
-    for (uint8_t x = 0; x < NUM_COLS_CILINDR; x++)
-    {
-      uint16_t index = XY_CILINDR(x, y);
-      if (index == lastSafeIndex || index >= NUM_LEDS)
-        continue;
-
-      float dx = x - currentCenterX;
-      float dy = y - currentCenterY;
-      float distance = sqrt(dx * dx + dy * dy);
-
-      if (distance < 0.5)
-      {
-        leds[index] = CRGB::Red; // Center
-        Serial.printf("Center LED at x:%d y:%d index:%d\n", x, y, index);
-      }
-      else if (distance < 1.5)
-      {
-        leds[index] = CRGB::Blue; // Immediate neighbors
-      }
-      else if (distance < 2.5)
-      {
-        leds[index] = CRGB::Green; // Outer ring
-      }
-    }
-  }
-  FastLED.show();
-}
-
 // array pointers to used patterns______________________
 
 #define ARRAY_SIZE(A) (sizeof(A) / sizeof((A)[0]))
@@ -1205,7 +1138,7 @@ SimplePatternList gPatterns = // this is list of patterns
         Cilindrical_Pattern,
         // identifyLEDs,
         // findCenter,
-        // testCylinderMapping2,
+        testCylinderMapping2,
         DiagonalPattern,
         testCylinderMapping,
         hypnoticSpiral,
@@ -1235,7 +1168,7 @@ const char *patternNames[] = {
     "Cilindrical_Pattern",
     // "identifyLEDs",
     // "findCenter",
-    // "testCylinderMapping2",
+    "testCylinderMapping2",
     "DiagonalPattern",
     "testCylinderMapping",
     "hypnoticSpiral",
