@@ -128,7 +128,6 @@ static void oneClick()
 {
   Serial.println("Clicked! Next pattern. automode OFF");
   changePattern();
-  previousMillis = millis();
   automode = false;
   statled[0].setHue(0);
 }
@@ -137,7 +136,6 @@ static void longPress()
 {
   Serial.println("Long press!");
   Serial.println("AutomodeOn");
-  previousMillis = currentMillis;
   automode = true;
   statled[0].setHue(100);
 }

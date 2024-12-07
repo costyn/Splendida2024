@@ -864,7 +864,7 @@ SimplePatternList gPatterns = // this is list of patterns
         Cilindrical_Pattern,
         PlasmaBall,
         FireComets,
-        F_lying,
+        // F_lying,  // I don't like it enough.
         RGBTunnel,
         Flower,
         Distortion_Waves_cylinder,
@@ -888,7 +888,7 @@ const char *patternNames[] = {
     "Cilindrical_Pattern",
     "PlasmaBall",
     "FireComets",
-    "F_lying",
+    // "F_lying",
     "RGBTunnel",
     "Flower",
     "Distortion_Waves_cylinder",

@@ -61,12 +61,13 @@
 
 // Animation Constants
 #define SECONDS_PER_PALETTE 10
-#define SECONDS_PER_PATTERN 20
+#define SECONDS_PER_PATTERN 45
 #define BLEND_SPEED 16
 #define BLEND_INTERVAL_MS 40
 
 // Potentiometers
 #define SMOOTHED_SAMPLE_SIZE 20
+#define BRIGHTNESS_THRESHOLD 2 // Adjust as needed
 Smooth smoothedSpeedPot(SMOOTHED_SAMPLE_SIZE);
 Smooth smoothedBrightnessPot(SMOOTHED_SAMPLE_SIZE);
 
@@ -79,17 +80,14 @@ byte rain[(NUM_COLS_PLANAR + 2) * (NUM_ROWS_PLANAR + 2)];
 
 OneButton button(BUTTON_PIN_INPUT, true);
 
-unsigned long previousMillis = 0;
-unsigned long currentMillis = 0;
 boolean automode = true; // change to false if you dont want automode on start
 byte InitNeeded = 1;
-boolean fadingBrightness = false;
 
 uint8_t fadeStartBrightness = 0;
 uint8_t fadeTargetBrightness = 0;
 uint8_t fadeCurrentBrightness = 0;
 
-uint8_t _currentBrightness = 150;
+uint8_t _currentBrightness = 0; // start dark
 uint8_t _targetBrightness = _currentBrightness;
 
 uint8_t gCurrentPatternNumber = 0; // Index number of which pattern is current
@@ -133,7 +131,7 @@ enum FadeState
 FadeState fadeState = FADE_NONE;
 
 Scheduler _runner;
-Task _taskChangeToBrightness(50 * TASK_MILLISECOND, TASK_FOREVER, &changeToBrightness);
+Task _taskChangeToBrightness(10 * TASK_MILLISECOND, TASK_FOREVER, &changeToBrightness);
 Task _taskRunPattern(10 * TASK_MILLISECOND, TASK_FOREVER, &runPattern);
 Task _taskChangePalette(SECONDS_PER_PALETTE *TASK_SECOND, TASK_FOREVER, &changePalette);
 Task _taskChangePattern(SECONDS_PER_PATTERN *TASK_SECOND, TASK_FOREVER, &changePattern);
