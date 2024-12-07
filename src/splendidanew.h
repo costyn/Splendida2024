@@ -13,27 +13,36 @@
 // double click change bright in loop 0..maxbright with 7 steps. not affect to Automode
 // long press activate Automode ON
 
+#define M5ATOM
+
 #include <Arduino.h>
-#include <M5Atom.h>
 #include "OneButton.h" // https://github.com/mathertel/OneButton
 #include <FastLED.h>
 #include <Smooth.h>
+#include <TaskScheduler.h>
+#include <driver/gpio.h>
+#include <driver/adc.h>
 
 // Emulator
-// #define DATA_PIN 26           // set your leds datapin   change to 32 for m5 atom lite
-// #define ATOMLED_PIN 19        // set your leds datapin   change to 27 for m5 atom lite
-// #define BUTTON_PIN_INPUT 16   // button pin              change to 39 for m5 atom lite
-// #define EXTRA_BUTTON_PIN 22   // button pin              change to 39 for m5 atom lite
-// #define BRIGHTNESS_POT_PIN 12 // Brightness potentiometer pin
-// #define SPEED_POT_PIN 13      // Speed potentiometer pin
+#ifndef M5ATOM
+#define DATA_PIN 26           // set your leds datapin   change to 32 for m5 atom lite
+#define ATOMLED_PIN 19        // set your leds datapin   change to 27 for m5 atom lite
+#define BUTTON_PIN_INPUT 16   // button pin              change to 39 for m5 atom lite
+#define EXTRA_BUTTON_PIN 22   // button pin              change to 39 for m5 atom lite
+#define BRIGHTNESS_POT_PIN 12 // Brightness potentiometer pin
+#define SPEED_POT_PIN 13      // Speed potentiometer pin
+#endif
 
 // Atom Matrix M5
-#define DATA_PIN 26                    // set your leds datapin   change to 32 for m5 atom lite
-#define ATOMLED_PIN 27                 // set your leds datapin   change to 27 for m5 atom lite
-#define BUTTON_PIN_INPUT 39            // button pin              change to 39 for m5 atom lite
-#define EXTRA_BUTTON_PIN 22            // button pin              change to 39 for m5 atom lite
-#define BRIGHTNESS_POT_PIN GPIO_NUM_34 // Brightness potentiometer pin
-#define SPEED_POT_PIN GPIO_NUM_33      // Speed potentiometer pin
+#ifdef M5ATOM
+#define DATA_PIN 26                // set your leds datapin   change to 32 for m5 atom lite
+#define ATOMLED_PIN 27             // set your leds datapin   change to 27 for m5 atom lite
+#define BUTTON_PIN_INPUT 39        // button pin              change to 39 for m5 atom lite
+#define EXTRA_BUTTON_PIN 22        // button pin              change to 39 for m5 atom lite
+#define BRIGHTNESS_POT_PIN 32      // Brightness potentiometer pin
+#define ADC_CHANNEL ADC1_CHANNEL_4 // Corresponding ADC channel for GPIO32
+#define SPEED_POT_PIN GPIO_NUM_33  // Speed potentiometer pin
+#endif
 
 #define LED_TYPE WS2812B // leds type
 #define COLOR_ORDER GRB  // color order of leds
@@ -58,6 +67,7 @@
 
 // Potentiometers
 #define SMOOTHED_SAMPLE_SIZE 20
+#define BRIGHTNESS_THRESHOLD 2 // Adjust as needed
 Smooth smoothedSpeedPot(SMOOTHED_SAMPLE_SIZE);
 Smooth smoothedBrightnessPot(SMOOTHED_SAMPLE_SIZE);
 
@@ -70,25 +80,34 @@ byte rain[(NUM_COLS_PLANAR + 2) * (NUM_ROWS_PLANAR + 2)];
 
 OneButton button(BUTTON_PIN_INPUT, true);
 
-unsigned long previousMillis = 0;
-unsigned long currentMillis = 0;
 boolean automode = true; // change to false if you dont want automode on start
 byte InitNeeded = 1;
-boolean fadingBrightness = false;
+
+uint8_t fadeStartBrightness = 0;
+uint8_t fadeTargetBrightness = 0;
+uint8_t fadeCurrentBrightness = 0;
+
+uint8_t _currentBrightness = 0; // start dark
+uint8_t _targetBrightness = _currentBrightness;
 
 uint8_t gCurrentPatternNumber = 0; // Index number of which pattern is current
+
+void changeToBrightness();
+void runPattern();
 
 static void oneClick();
 static void doubleClick();
 static void longPress();
-void FadeOut(uint8_t steps);
-void FadeIn(uint8_t steps);
+void fadeOut();
+void fadeIn();
+std::string timeToString();
 
 #include "palettes.h"
 #include "tables.h"
 #include "patterns.h"
 
 // Function Prototypes
+void initializeGPIO();
 void initializeSerial();
 void initializeLEDs();
 void initializeButton();
@@ -97,5 +116,28 @@ void readPotentiometers();
 void handleButton();
 void changePalette();
 void blendPalette();
+void changePattern();
+void startFadeOut();
+void startFadeIn();
+void fade();
+
+enum FadeState
+{
+    FADE_NONE,
+    FADING_OUT,
+    FADING_IN
+};
+
+FadeState fadeState = FADE_NONE;
+
+Scheduler _runner;
+Task _taskChangeToBrightness(10 * TASK_MILLISECOND, TASK_FOREVER, &changeToBrightness);
+Task _taskRunPattern(10 * TASK_MILLISECOND, TASK_FOREVER, &runPattern);
+Task _taskChangePalette(SECONDS_PER_PALETTE *TASK_SECOND, TASK_FOREVER, &changePalette);
+Task _taskChangePattern(SECONDS_PER_PATTERN *TASK_SECOND, TASK_FOREVER, &changePattern);
+Task _taskHandleButton(10 * TASK_MILLISECOND, TASK_FOREVER, &handleButton);
+Task _taskReadPotentiometers(100 * TASK_MILLISECOND, TASK_FOREVER, &readPotentiometers);
+Task _taskBlendPalette(BLEND_INTERVAL_MS *TASK_MILLISECOND, TASK_FOREVER, &blendPalette);
+Task _taskFade(10 * TASK_MILLISECOND, TASK_FOREVER, &fade);
 
 #endif
