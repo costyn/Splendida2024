@@ -34,8 +34,7 @@ void setup()
   _runner.addTask(_taskHandleButton);
   _runner.addTask(_taskReadPotentiometers);
   _runner.addTask(_taskBlendPalette);
-  _runner.addTask(_taskFadeOut);
-  _runner.addTask(_taskFadeIn);
+  _runner.addTask(_taskFade);
 
   _taskChangeToBrightness.enable();
   _taskRunPattern.enable();
@@ -146,49 +145,80 @@ static void longPress()
 // Usage example in pattern transition:
 void changePattern()
 {
-  _taskFadeOut.enable();
+  startFadeOut();
 }
 
-void fadeOut()
+void fade()
 {
-  constexpr const char *SGN = "fadeOut()";
+  constexpr const char *SGN = "fade()";
 
-  static uint8_t currentBrightness = _currentBrightness;
+  if (fadeState == FADING_OUT)
+  {
+    if (fadeCurrentBrightness > fadeTargetBrightness)
+    {
+      fadeCurrentBrightness--;
+      FastLED.setBrightness(fadeCurrentBrightness);
+      FastLED.show();
+    }
+    else
+    {
+      // Fade out complete
+      Serial.printf("%s: Fade out complete\n", SGN);
+      _taskFade.disable();
 
+      // Change pattern here
+      gCurrentPatternNumber = (gCurrentPatternNumber + 1) % ARRAY_SIZE(gPatterns);
+      InitNeeded = 1;
+      printPatternAndPalette();
+
+      // Start fade in
+      startFadeIn();
+    }
+  }
+  else if (fadeState == FADING_IN)
+  {
+    if (fadeCurrentBrightness < fadeTargetBrightness)
+    {
+      fadeCurrentBrightness++;
+      FastLED.setBrightness(fadeCurrentBrightness);
+      FastLED.show();
+    }
+    else
+    {
+      // Fade in complete
+      Serial.printf("%s: Fade in complete\n", SGN);
+      _taskFade.disable();
+      fadeState = FADE_NONE;
+
+      // Re-enable tasks
+      _taskReadPotentiometers.enable();
+      _taskChangeToBrightness.enable();
+    }
+  }
+}
+
+void startFadeOut()
+{
+  fadeState = FADING_OUT;
+  fadeStartBrightness = _currentBrightness;
+  fadeTargetBrightness = 0;
+  fadeCurrentBrightness = fadeStartBrightness;
+
+  // Disable interfering tasks
   _taskReadPotentiometers.disable();
   _taskChangeToBrightness.disable();
-  currentBrightness--;
-  Serial.printf("%s: %s: Fading step %u from %u\n", timeToString().c_str(), SGN, currentBrightness, _currentBrightness);
 
-  if (currentBrightness == 0)
-  {
-    Serial.printf("%s: %s: End Fade out %u\n", timeToString().c_str(), SGN, _currentBrightness);
-
-    _taskFadeOut.disable();
-    gCurrentPatternNumber = (gCurrentPatternNumber + 1) % ARRAY_SIZE(gPatterns);
-    InitNeeded = 1;
-    printPatternAndPalette();
-    _taskFadeIn.enable();
-  }
-  FastLED.setBrightness(currentBrightness);
+  _taskFade.enable();
 }
 
-void fadeIn()
+void startFadeIn()
 {
-  constexpr const char *SGN = "fadeIn()";
+  fadeState = FADING_IN;
+  fadeStartBrightness = 0;
+  fadeTargetBrightness = _currentBrightness;
+  fadeCurrentBrightness = fadeStartBrightness;
 
-  static uint8_t currentBrightness = 0;
-  currentBrightness++;
-  Serial.printf("%s: %s: Fading step %u from %u\n", timeToString().c_str(), SGN, currentBrightness, _currentBrightness);
-  if (currentBrightness == _currentBrightness)
-  {
-    Serial.printf("%s: %s: End Fade in %u\n", timeToString().c_str(), SGN, _currentBrightness);
-
-    _taskReadPotentiometers.enable();
-    _taskChangeToBrightness.enable();
-    _taskFadeIn.disable();
-  }
-  FastLED.setBrightness(currentBrightness);
+  _taskFade.enable();
 }
 
 int readPotentiometer(uint8_t pin)

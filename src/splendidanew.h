@@ -85,6 +85,10 @@ boolean automode = true; // change to false if you dont want automode on start
 byte InitNeeded = 1;
 boolean fadingBrightness = false;
 
+uint8_t fadeStartBrightness = 0;
+uint8_t fadeTargetBrightness = 0;
+uint8_t fadeCurrentBrightness = 0;
+
 uint8_t _currentBrightness = 150;
 uint8_t _targetBrightness = _currentBrightness;
 
@@ -115,6 +119,9 @@ void handleButton();
 void changePalette();
 void blendPalette();
 void changePattern();
+void startFadeOut();
+void startFadeIn();
+void fade();
 
 enum FadeState
 {
@@ -122,6 +129,8 @@ enum FadeState
     FADING_OUT,
     FADING_IN
 };
+
+FadeState fadeState = FADE_NONE;
 
 Scheduler _runner;
 Task _taskChangeToBrightness(50 * TASK_MILLISECOND, TASK_FOREVER, &changeToBrightness);
@@ -131,7 +140,6 @@ Task _taskChangePattern(SECONDS_PER_PATTERN *TASK_SECOND, TASK_FOREVER, &changeP
 Task _taskHandleButton(10 * TASK_MILLISECOND, TASK_FOREVER, &handleButton);
 Task _taskReadPotentiometers(100 * TASK_MILLISECOND, TASK_FOREVER, &readPotentiometers);
 Task _taskBlendPalette(BLEND_INTERVAL_MS *TASK_MILLISECOND, TASK_FOREVER, &blendPalette);
-Task _taskFadeOut(10 * TASK_MILLISECOND, TASK_FOREVER, &fadeOut);
-Task _taskFadeIn(10 * TASK_MILLISECOND, TASK_FOREVER, &fadeIn);
+Task _taskFade(10 * TASK_MILLISECOND, TASK_FOREVER, &fade);
 
 #endif
