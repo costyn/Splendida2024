@@ -29,6 +29,35 @@ void GammaCorrection()
   }
 }
 
+// Original -> gTimeAccumulator conversion:
+
+// millis() / 3 (faster)
+// uint16_t a = (uint16_t)(gTimeAccumulator * 2.67);  // 8/3 = 2.67
+
+// // millis() / 7 (slightly faster)
+// uint16_t a = (uint16_t)(gTimeAccumulator * 1.14);  // 8/7 = 1.14
+
+// // millis() / 12 (slower)
+// uint16_t a = (uint16_t)(gTimeAccumulator * 0.67);  // 8/12 = 0.67
+
+// // straight millis()
+// uint16_t ms = (uint16_t)(gTimeAccumulator * 8.0);  // Multiply by 8 to get back to original speed
+
+// // Standardized replacements:
+// // For /6 (faster):
+// uint16_t a = (uint16_t)(gTimeAccumulator * 1.33); // 8/6 = 1.33
+
+// // For /8 (standard):
+// uint16_t a = (uint16_t)gTimeAccumulator;
+
+// // For >>3 (same as /8):
+// uint16_t a = (uint16_t)gTimeAccumulator;
+
+// Original: millis() / 24 (slower than standard /8)
+// Factor: 8/24 = 0.333 (one-third speed)
+
+// uint16_t a = (uint16_t)(gTimeAccumulator * 0.333);
+
 //_________________________ planar map patterns
 
 // DigitalRain_____________________________________
@@ -84,13 +113,9 @@ void DigitalRain()
   EVERY_N_MILLISECONDS(15) { changepattern(); }
 }
 
-// DiagonalPattern_____________________________________
-
+// Modified DiagonalPattern function
 void DiagonalPattern()
 {
-  uint16_t ms = millis() / 8;
-  int index = 0;
-
   for (byte j = 0; j < NUM_ROWS_PLANAR; j++)
   {
     for (byte i = 0; i < NUM_COLS_PLANAR; i++)
@@ -98,7 +123,9 @@ void DiagonalPattern()
       int ledsindex = XY_fibon_PLANAR(i, j);
       if (ledsindex == lastSafeIndex)
         continue;
-      CRGB newcolor = ColorFromPalette(gCurrentPalette, (i << 3) + (j << 3) + ms, 255);
+      // Use accumulated time instead of direct millis()
+      CRGB newcolor = ColorFromPalette(gCurrentPalette,
+                                       (i << 3) + (j << 3) + (int)gTimeAccumulator, 255);
       leds[ledsindex] = newcolor;
     }
   }
@@ -108,7 +135,7 @@ void DiagonalPattern()
 
 void fire2021()
 {
-  int a = millis();
+  int a = (int)(gTimeAccumulator * 8.0); // Multiply by 8 to get back to original speed
   int a1 = a / 3;
   for (byte j = 0; j < NUM_ROWS_PLANAR; j++)
   {
@@ -129,7 +156,7 @@ void Distortion_Waves_planar()
   byte speed = 5;
   uint8_t scale = 2;
 
-  uint16_t a = millis() / 24;
+  uint16_t a = (uint16_t)(gTimeAccumulator * 0.333);
   uint16_t a2 = a / 2;
   uint16_t a3 = a / 3;
 
@@ -175,8 +202,7 @@ void Distortion_Waves_planar()
 
 void RGB_hiphotic()
 {
-
-  int a = millis() / 6;
+  uint16_t a = (uint16_t)(gTimeAccumulator * 1.33);
   for (int x = 0; x < NUM_COLS_PLANAR; x++)
   {
     for (int y = 0; y < NUM_ROWS_PLANAR; y++)
@@ -388,7 +414,7 @@ byte code(int x, int y, int t)
 
 void RGBTunnel()
 {
-  int t = millis() >> 3;
+  uint16_t t = (uint16_t)gTimeAccumulator;
 
   for (byte y = 0; y < NUM_ROWS_PLANAR; y++)
   {
@@ -410,7 +436,7 @@ void RGBTunnel()
 
 void RGB_Caleidoscope1()
 {
-  uint16_t a = millis() / 8;
+  uint16_t a = (uint16_t)gTimeAccumulator;
 
   for (int j = 0; j < NUM_ROWS_CILINDR; j++)
   {
@@ -433,7 +459,7 @@ void RGB_Caleidoscope1()
 
 void RGB_Caleidoscope2()
 {
-  uint16_t a = millis() / 8;
+  uint16_t a = (uint16_t)gTimeAccumulator;
 
   for (int j = 0; j < NUM_ROWS_CILINDR; j++)
   {
@@ -460,7 +486,7 @@ void Distortion_Waves_cylinder()
   uint8_t w = 2;
   uint8_t scale = 2;
 
-  uint16_t a = millis() / 24;
+  uint16_t a = (uint16_t)(gTimeAccumulator * 0.333);
   uint16_t a2 = a / 2;
   uint16_t a3 = a / 3;
 
@@ -514,7 +540,7 @@ void Distortion_Waves_cylinder()
 
 void FireButterfly()
 {
-  uint16_t a = millis() / 3;
+  uint16_t a = (uint16_t)(gTimeAccumulator * 2.67); // 8/3 = 2.67
 
   for (int j = 0; j < NUM_ROWS_CILINDR; j++)
   {
@@ -564,10 +590,10 @@ void DrawOneFrameSprite(uint16_t xspeed, uint16_t yspeed, byte fract, byte *spri
 }
 
 // Swirl_____________________________________
-
+// FIXME: This animation is a bit janky
 void Swirl()
 {
-  uint16_t a = millis() / 7;
+  uint16_t a = (uint16_t)(gTimeAccumulator * 1.14); // 8/7 = 1.14
 
   for (int j = 0; j < NUM_ROWS_CILINDR; j++)
   {
@@ -588,7 +614,7 @@ void Swirl()
 
 void Cilindrical_Pattern()
 {
-  uint16_t a = millis() / 12;
+  uint16_t a = (uint16_t)(gTimeAccumulator * 0.67);
   float scale = (sin(a / 32 * PI / 180) * 16) + 32;
 
   float scale1 = 0;
@@ -613,7 +639,7 @@ void Cilindrical_Pattern()
 void Spiral()
 {
 
-  uint16_t a = millis() / 8;
+  uint16_t a = (uint16_t)gTimeAccumulator;
   float scale = (sin(a / 32 * PI / 180) * 18) - 6;
 
   float scale1 = 0;
@@ -643,7 +669,7 @@ void Spiral2()
     FastLED.clear();
   }
 
-  uint16_t a = millis() / 6;
+  uint16_t a = (uint16_t)(gTimeAccumulator * 1.33); // 8/6 = 1.33
   float scale = sin(a / 32 * PI / 180) * 12;
 
   float scale1 = 0;
@@ -680,7 +706,7 @@ void Spiral2()
 
 void Flower()
 {
-  uint16_t a = millis() / 8;
+  uint16_t a = (uint16_t)gTimeAccumulator;
 
   for (int j = 0; j < NUM_ROWS_CILINDR; j++)
   {
@@ -716,7 +742,7 @@ void pride()
   uint16_t hue16 = sHue16; // gHue * 256;
   uint16_t hueinc16 = beatsin88(113, 1, 3000);
 
-  uint16_t ms = millis();
+  uint16_t ms = (uint16_t)(gTimeAccumulator * 8.0);
   uint16_t deltams = ms - sLastMillis;
   sLastMillis = ms;
   sPseudotime += deltams * msmultiplier;
@@ -773,7 +799,7 @@ void colorwaves()
   uint16_t hue16 = sHue16; // gHue * 256;
   uint16_t hueinc16 = beatsin88(113, 300, 1500);
 
-  uint16_t ms = millis();
+  uint16_t ms = (uint16_t)(gTimeAccumulator * 8.0);
   uint16_t deltams = ms - sLastMillis;
   sLastMillis = ms;
   sPseudotime += deltams * msmultiplier;
@@ -948,6 +974,15 @@ void hypnoticSpiral()
       if (index == lastSafeIndex || index >= NUM_LEDS)
         continue;
 
+      // Debugging: Check if this is the problematic LED
+      // if (index == 85)
+      // {
+      //   Serial.print("LED 0 at index 85 found at x: ");
+      //   Serial.print(x);
+      //   Serial.print(", y: ");
+      //   Serial.println(y);
+      // }
+
       // Calculate distance from center
       float deltaX = x - centerX;
       float deltaY = y - centerY;
@@ -965,6 +1000,25 @@ void hypnoticSpiral()
 
       // Set the LED color
       leds[index] = color;
+
+      // Debugging: Print calculations for index 85
+      // if (index == 85)
+      // {
+      //   Serial.print("distance: ");
+      //   Serial.print(distance);
+      //   Serial.print(", wave: ");
+      //   Serial.print(wave);
+      //   Serial.print(", brightness: ");
+      //   Serial.println(brightness);
+      //   Serial.print("colorIndex: ");
+      //   Serial.print(colorIndex);
+      //   Serial.print(", color: ");
+      //   Serial.print(color.r);
+      //   Serial.print(", ");
+      //   Serial.print(color.g);
+      //   Serial.print(", ");
+      //   Serial.println(color.b);
+      // }
     }
   }
 }
@@ -1041,6 +1095,7 @@ SimplePatternList gPatterns = // this is list of patterns
     {
         Cilindrical_Pattern,
         // identifyLEDs,
+        DiagonalPattern,
         testCylinderMapping,
         hypnoticSpiral,
         spiralCylinderWave,
@@ -1051,7 +1106,6 @@ SimplePatternList gPatterns = // this is list of patterns
         Flower,
         Distortion_Waves_cylinder,
         colorwaves,
-        DiagonalPattern,
         Distortion_Waves_planar,
         FireButterfly,
         SoftTwinkles,
@@ -1069,6 +1123,7 @@ SimplePatternList gPatterns = // this is list of patterns
 const char *patternNames[] = {
     "Cilindrical_Pattern",
     // "identifyLEDs",
+    "DiagonalPattern",
     "testCylinderMapping",
     "hypnoticSpiral",
     "spiralCylinderWave",
@@ -1079,7 +1134,6 @@ const char *patternNames[] = {
     "Flower",
     "Distortion_Waves_cylinder",
     "colorwaves",
-    "DiagonalPattern",
     "Distortion_Waves_planar",
     "FireButterfly",
     "SoftTwinkles",

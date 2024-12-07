@@ -92,6 +92,9 @@ uint8_t _targetBrightness = _currentBrightness;
 
 uint8_t gCurrentPatternNumber = 0; // Index number of which pattern is current
 
+float gTimeAccumulator = 0;
+uint8_t gSpeed = 8; // Adjust range as needed, controlled by pot
+
 void changeToBrightness();
 void runPattern();
 
