@@ -21,16 +21,7 @@
 // Setup function
 void setup()
 {
-#ifdef M5ATOM
-  // M5.begin(true, false, true);
-  // pinMode(GPIO_NUM_34, INPUT);
-  // gpio_pulldown_dis(GPIO_NUM_23);
-  // gpio_pullup_dis(GPIO_NUM_23);
-  // pinMode(GPIO_NUM_33, INPUT);
-#endif
-  // pinMode(BRIGHTNESS_POT_PIN, INPUT);
-  // pinMode(SPEED_POT_PIN, INPUT);
-
+  initializeGPIO();
   initializeSerial();
   initializeLEDs();
   initializeButton();
@@ -75,6 +66,14 @@ void printPatternAndPalette()
   Serial.print(patternNames[gCurrentPatternNumber]);
   Serial.print("\tPalette: ");
   Serial.println(paletteNames[gCurrentPaletteNumber]);
+}
+
+void initializeGPIO()
+{
+  // Configure ADC
+  adc1_config_width(ADC_WIDTH_BIT_12);
+  adc1_config_channel_atten(ADC1_CHANNEL_4, ADC_ATTEN_DB_12);
+  adc1_config_channel_atten(ADC1_CHANNEL_5, ADC_ATTEN_DB_12);
 }
 
 // Initialize Serial Communication
@@ -147,20 +146,28 @@ static void longPress()
 // Usage example in pattern transition:
 void changePattern()
 {
-  gCurrentPatternNumber = (gCurrentPatternNumber + 1) % ARRAY_SIZE(gPatterns);
-  InitNeeded = 1;
-  printPatternAndPalette();
+  _taskFadeOut.enable();
 }
 
 void fadeOut()
 {
+  constexpr const char *SGN = "fadeOut()";
+
   static uint8_t currentBrightness = _currentBrightness;
+
   _taskReadPotentiometers.disable();
   _taskChangeToBrightness.disable();
   currentBrightness--;
+  Serial.printf("%s: %s: Fading step %u from %u\n", timeToString().c_str(), SGN, currentBrightness, _currentBrightness);
+
   if (currentBrightness == 0)
   {
+    Serial.printf("%s: %s: End Fade out %u\n", timeToString().c_str(), SGN, _currentBrightness);
+
     _taskFadeOut.disable();
+    gCurrentPatternNumber = (gCurrentPatternNumber + 1) % ARRAY_SIZE(gPatterns);
+    InitNeeded = 1;
+    printPatternAndPalette();
     _taskFadeIn.enable();
   }
   FastLED.setBrightness(currentBrightness);
@@ -168,10 +175,15 @@ void fadeOut()
 
 void fadeIn()
 {
+  constexpr const char *SGN = "fadeIn()";
+
   static uint8_t currentBrightness = 0;
   currentBrightness++;
+  Serial.printf("%s: %s: Fading step %u from %u\n", timeToString().c_str(), SGN, currentBrightness, _currentBrightness);
   if (currentBrightness == _currentBrightness)
   {
+    Serial.printf("%s: %s: End Fade in %u\n", timeToString().c_str(), SGN, _currentBrightness);
+
     _taskReadPotentiometers.enable();
     _taskChangeToBrightness.enable();
     _taskFadeIn.disable();
@@ -179,12 +191,24 @@ void fadeIn()
   FastLED.setBrightness(currentBrightness);
 }
 
+int readPotentiometer(uint8_t pin)
+{
+  if (pin == BRIGHTNESS_POT_PIN)
+  {
+    return adc1_get_raw(ADC1_CHANNEL_4);
+  }
+  else if (pin == SPEED_POT_PIN)
+  {
+    return adc1_get_raw(ADC1_CHANNEL_5);
+  }
+  return 0;
+}
+
 void readPotentiometers()
 {
   static int lastMappedBrightness = 0;
 
-  // int speedPot = analogRead(SPEED_POT_PIN); // janky
-  int brightnessPot = analogRead(BRIGHTNESS_POT_PIN);
+  int brightnessPot = readPotentiometer(BRIGHTNESS_POT_PIN);
 
   smoothedBrightnessPot += brightnessPot;
 
@@ -217,6 +241,7 @@ boolean changeToTarget(uint8_t target, uint8_t &current)
 // Generic function that can be used for other parameters too
 void changeToBrightness()
 {
+
   constexpr const char *SGN = "ChangeToBrightness()";
   Serial.printf("%s: %s: Adjusting Brightness: %u -> %u\n", timeToString().c_str(), SGN, _currentBrightness, _targetBrightness);
 

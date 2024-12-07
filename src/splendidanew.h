@@ -16,13 +16,12 @@
 #define M5ATOM
 
 #include <Arduino.h>
-#ifdef M5ATOM
-// #include <M5Atom.h>
-#endif
 #include "OneButton.h" // https://github.com/mathertel/OneButton
 #include <FastLED.h>
 #include <Smooth.h>
 #include <TaskScheduler.h>
+#include <driver/gpio.h>
+#include <driver/adc.h>
 
 // Emulator
 #ifndef M5ATOM
@@ -36,12 +35,13 @@
 
 // Atom Matrix M5
 #ifdef M5ATOM
-#define DATA_PIN 26                    // set your leds datapin   change to 32 for m5 atom lite
-#define ATOMLED_PIN 27                 // set your leds datapin   change to 27 for m5 atom lite
-#define BUTTON_PIN_INPUT 39            // button pin              change to 39 for m5 atom lite
-#define EXTRA_BUTTON_PIN 22            // button pin              change to 39 for m5 atom lite
-#define BRIGHTNESS_POT_PIN GPIO_NUM_34 // Brightness potentiometer pin
-#define SPEED_POT_PIN GPIO_NUM_33      // Speed potentiometer pin
+#define DATA_PIN 26                // set your leds datapin   change to 32 for m5 atom lite
+#define ATOMLED_PIN 27             // set your leds datapin   change to 27 for m5 atom lite
+#define BUTTON_PIN_INPUT 39        // button pin              change to 39 for m5 atom lite
+#define EXTRA_BUTTON_PIN 22        // button pin              change to 39 for m5 atom lite
+#define BRIGHTNESS_POT_PIN 32      // Brightness potentiometer pin
+#define ADC_CHANNEL ADC1_CHANNEL_4 // Corresponding ADC channel for GPIO32
+#define SPEED_POT_PIN GPIO_NUM_33  // Speed potentiometer pin
 #endif
 
 #define LED_TYPE WS2812B // leds type
@@ -105,6 +105,7 @@ std::string timeToString();
 #include "patterns.h"
 
 // Function Prototypes
+void initializeGPIO();
 void initializeSerial();
 void initializeLEDs();
 void initializeButton();
@@ -130,7 +131,7 @@ Task _taskChangePattern(SECONDS_PER_PATTERN *TASK_SECOND, TASK_FOREVER, &changeP
 Task _taskHandleButton(10 * TASK_MILLISECOND, TASK_FOREVER, &handleButton);
 Task _taskReadPotentiometers(100 * TASK_MILLISECOND, TASK_FOREVER, &readPotentiometers);
 Task _taskBlendPalette(BLEND_INTERVAL_MS *TASK_MILLISECOND, TASK_FOREVER, &blendPalette);
-Task _taskFadeOut(10 * TASK_MILLISECOND, TASK_ONCE, &fadeOut);
-Task _taskFadeIn(10 * TASK_MILLISECOND, TASK_ONCE, &fadeIn);
+Task _taskFadeOut(10 * TASK_MILLISECOND, TASK_FOREVER, &fadeOut);
+Task _taskFadeIn(10 * TASK_MILLISECOND, TASK_FOREVER, &fadeIn);
 
 #endif
