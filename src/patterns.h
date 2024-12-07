@@ -854,6 +854,118 @@ void SoftTwinkles()
     leds[j].b -= 1;
 }
 
+void spiralCylinderWave()
+{
+  // Constants for the animation
+  const float speed = 0.1;       // Controls the speed of the wave
+  const float waveLength = 3.0;  // Controls the number of waves around the cylinder
+  const float amplitude = 127.5; // Amplitude for brightness modulation (half of 255)
+
+  // Time variable for animation
+  static float time = 0.0;
+  time += speed;
+
+  // Loop through cylinder coordinates
+  for (uint8_t x = 0; x < NUM_COLS_CILINDR; x++)
+  {
+    for (uint8_t y = 0; y < NUM_ROWS_CILINDR; y++)
+    {
+      // Get LED index from coordinates
+      uint16_t index = XY_CILINDR(x, y);
+
+      // Skip invalid indices
+      if (index == lastSafeIndex || index >= NUM_LEDS)
+        continue;
+
+      // Calculate angle around the cylinder
+      float angle = ((float)x / NUM_COLS_CILINDR) * 2.0f * PI * waveLength;
+
+      // Calculate wave pattern
+      float wave = sin(angle + time + ((float)y / NUM_ROWS_CILINDR) * PI);
+
+      // Map wave to brightness (0-255)
+      uint8_t brightness = (uint8_t)((wave + 1.0f) * amplitude); // wave ranges from -1 to 1
+
+      // Get color from palette based on y position
+      uint8_t colorIndex = map(y, 0, NUM_ROWS_CILINDR - 1, 0, 255);
+      CRGB color = ColorFromPalette(gCurrentPalette, colorIndex, brightness);
+
+      // Set the LED color
+      leds[index] = color;
+    }
+  }
+}
+
+void testCylinderMapping()
+{
+  for (uint8_t y = 0; y < NUM_ROWS_CILINDR; y++)
+  {
+    for (uint8_t x = 0; x < NUM_COLS_CILINDR; x++)
+    {
+      // Get LED index from coordinates
+      uint16_t index = XY_CILINDR(x, y);
+
+      // Skip invalid indices
+      if (index == lastSafeIndex || index >= NUM_LEDS)
+        continue;
+
+      // Set color based on x-position to create a horizontal gradient
+      uint8_t hue = map(x, 0, NUM_COLS_CILINDR - 1, 0, 255);
+
+      // Set LED color using HSV hue
+      leds[index] = CHSV(hue, 255, 255);
+    }
+  }
+}
+
+void hypnoticSpiral()
+{
+  // Animation parameters
+  const float speed = 0.05;      // Speed of the inward movement
+  const float frequency = 0.2;   // Controls the number of waves
+  const float amplitude = 127.5; // Half of 255 for brightness calculation
+
+  // Time variable for animation
+  static float time = 0.0;
+  time += speed;
+
+  // Center coordinates
+  float centerX = NUM_COLS_CILINDR / 2.0;
+  float centerY = NUM_ROWS_CILINDR / 2.0;
+
+  // Loop through cylinder coordinates
+  for (uint8_t x = 0; x < NUM_COLS_CILINDR; x++)
+  {
+    for (uint8_t y = 0; y < NUM_ROWS_CILINDR; y++)
+    {
+      // Get LED index from coordinates
+      uint16_t index = XY_CILINDR(x, y);
+
+      // Skip invalid indices
+      if (index == lastSafeIndex || index >= NUM_LEDS)
+        continue;
+
+      // Calculate distance from center
+      float deltaX = x - centerX;
+      float deltaY = y - centerY;
+      float distance = sqrt(deltaX * deltaX + deltaY * deltaY);
+
+      // Calculate wave pattern moving inward
+      float wave = sin(distance * frequency - time);
+
+      // Map wave to brightness (0-255)
+      uint8_t brightness = (uint8_t)((wave + 1.0f) * amplitude);
+
+      // Get color from the palette based on distance
+      uint8_t colorIndex = map(distance, 0, sqrt(centerX * centerX + centerY * centerY), 0, 255);
+      CRGB color = ColorFromPalette(gCurrentPalette, colorIndex, brightness);
+
+      // Set the LED color
+      leds[index] = color;
+    }
+  }
+}
+
 // array pointers to used patterns______________________
 
 #define ARRAY_SIZE(A) (sizeof(A) / sizeof((A)[0]))
@@ -862,6 +974,9 @@ typedef void (*SimplePatternList[])();
 SimplePatternList gPatterns = // this is list of patterns
     {
         Cilindrical_Pattern,
+        testCylinderMapping,
+        hypnoticSpiral,
+        spiralCylinderWave,
         PlasmaBall,
         FireComets,
         // F_lying,  // I don't like it enough.
@@ -886,6 +1001,9 @@ SimplePatternList gPatterns = // this is list of patterns
 
 const char *patternNames[] = {
     "Cilindrical_Pattern",
+    "testCylinderMapping",
+    "hypnoticSpiral",
+    "spiralCylinderWave",
     "PlasmaBall",
     "FireComets",
     // "F_lying",

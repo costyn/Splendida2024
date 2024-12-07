@@ -132,7 +132,7 @@ FadeState fadeState = FADE_NONE;
 
 Scheduler _runner;
 Task _taskChangeToBrightness(10 * TASK_MILLISECOND, TASK_FOREVER, &changeToBrightness);
-Task _taskRunPattern(10 * TASK_MILLISECOND, TASK_FOREVER, &runPattern);
+Task _taskRunPattern(1 * TASK_MILLISECOND, TASK_FOREVER, &runPattern);
 Task _taskChangePalette(SECONDS_PER_PALETTE *TASK_SECOND, TASK_FOREVER, &changePalette);
 Task _taskChangePattern(SECONDS_PER_PATTERN *TASK_SECOND, TASK_FOREVER, &changePattern);
 Task _taskHandleButton(10 * TASK_MILLISECOND, TASK_FOREVER, &handleButton);

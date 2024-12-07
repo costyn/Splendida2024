@@ -55,7 +55,6 @@ void runPattern()
 {
   gPatterns[gCurrentPatternNumber](); // play current pattern
   statled[0].fadeToBlackBy(1);
-
   FastLED.show();
 }
 
