@@ -9,7 +9,7 @@
 // https://twitter.com/ldir_ko
 
 // controls: from start automode is enable and patterns change in loop
-// one button click change pattern to next and automode is OFF
+// one g_patternButton click change pattern to next and automode is OFF
 // double click change bright in loop 0..maxbright with 7 steps. not affect to Automode
 // long press activate Automode ON
 
@@ -56,7 +56,7 @@
 
 #define NUM_COLS_CYLINDER 45 // resolution of cylindrical lookup table
 #define NUM_ROWS_CYLINDER 11 // resolution of cinindrical lookup table
-#define NUM_LEDS_CYLINDER NUM_COLS_CILINDR *NUM_ROWS_CYLINDER
+// #define NUM_LEDS_CYLINDER NUM_COLS_CILINDR *NUM_ROWS_CYLINDER
 
 #define NUM_LEDS 256
 
@@ -68,33 +68,42 @@
 
 // Potentiometers
 #define SMOOTHED_SAMPLE_SIZE 20
-Smooth smoothedSpeedPot(SMOOTHED_SAMPLE_SIZE);
-Smooth smoothedBrightnessPot(SMOOTHED_SAMPLE_SIZE);
+Smooth g_smoothedSpeedPot(SMOOTHED_SAMPLE_SIZE);
+Smooth g_smoothedBrightnessPot(SMOOTHED_SAMPLE_SIZE);
 
 uint8_t calculatePowerScaledBrightness(uint8_t targetBrightness);
 
-uint16_t lastSafeIndex = 256;
+uint16_t g_lastSafeIndex = 256;
 
 CRGB leds[NUM_LEDS + 1];
-CRGB statled[1];
+CRGB g_statusLed[1];
 
 byte rain[(NUM_COLS_PLANAR + 2) * (NUM_ROWS_PLANAR + 2)];
 
-OneButton button(BUTTON_PIN_INPUT, true);
+OneButton g_patternButton(BUTTON_PIN_INPUT, true);
 
-byte InitNeeded = 1;
+byte g_patternInitNeeded = 1;
 
-uint8_t fadeStartBrightness = 0;
-uint8_t fadeTargetBrightness = 0;
-uint8_t fadeCurrentBrightness = 0;
+uint8_t g_fadeStartBrightness = 0;
+uint8_t g_fadeTargetBrightness = 0;
+uint8_t g_fadeCurrentBrightness = 0;
 
-uint8_t _currentBrightness = 0; // start dark
-uint8_t _targetBrightness = _currentBrightness;
+uint8_t g_currentBrightness = 0; // start dark
+uint8_t g_targetBrightness = g_currentBrightness;
 
 uint8_t gCurrentPatternNumber = 0; // Index number of which pattern is current
 
-float gTimeAccumulator = 0;
-uint8_t gSpeed = 8; // Adjust range as needed, controlled by pot
+float g_timeAccumulator = 0;
+uint8_t g_animationSpeed = 8; // Adjust range as needed, controlled by pot
+
+enum FadeState
+{
+    FADE_NONE,
+    FADING_OUT,
+    FADING_IN
+};
+
+FadeState g_fadeState = FADE_NONE;
 
 void changeToBrightness();
 void runPattern();
@@ -124,15 +133,6 @@ void changePattern();
 void startFadeOut();
 void startFadeIn();
 void fade();
-
-enum FadeState
-{
-    FADE_NONE,
-    FADING_OUT,
-    FADING_IN
-};
-
-FadeState fadeState = FADE_NONE;
 
 Scheduler _runner;
 Task _taskChangeToBrightness(10 * TASK_MILLISECOND, TASK_FOREVER, &changeToBrightness);

@@ -9,7 +9,7 @@
 // https://github.com/costyn
 
 // controls: from start automode is enable and patterns change in loop
-// one button click change pattern to next and automode is OFF
+// one g_patternButton click change pattern to next and automode is OFF
 // double click change bright in loop 0..maxbright with 7 steps. not affect to Automode
 // long press activate Automode ON
 
@@ -54,19 +54,19 @@ void loop()
 void runPattern()
 {
   // Update global time accumulator
-  // Use gSpeed to control the speed of the patterns
+  // Use g_animationSpeed to control the speed of the patterns
   static unsigned long lastUpdate = 0;
   unsigned long currentMillis = millis();
 
   if (currentMillis - lastUpdate > 0)
   {
-    gTimeAccumulator += (float)(currentMillis - lastUpdate) / gSpeed;
+    g_timeAccumulator += (float)(currentMillis - lastUpdate) / g_animationSpeed;
     lastUpdate = currentMillis;
   }
 
   // Run pattern
   gPatterns[gCurrentPatternNumber]();
-  statled[0].fadeToBlackBy(1);
+  g_statusLed[0].fadeToBlackBy(1);
   FastLED.show();
 }
 
@@ -96,7 +96,7 @@ void initializeSerial()
 void initializeLEDs()
 {
   FastLED.addLeds<LED_TYPE, DATA_PIN, COLOR_ORDER>(leds, NUM_LEDS);
-  FastLED.addLeds<LED_TYPE, ATOMLED_PIN, COLOR_ORDER>(statled, 1);
+  FastLED.addLeds<LED_TYPE, ATOMLED_PIN, COLOR_ORDER>(g_statusLed, 1);
   FastLED.setMaxPowerInVoltsAndMilliamps(5, MAX_POWER_MILLIAMPS);
   FastLED.setCorrection(TypicalLEDStrip);
   FastLED.setDither(BINARY_DITHER);
@@ -107,16 +107,16 @@ void initializeLEDs()
 // Initialize Button
 void initializeButton()
 {
-  button.attachClick(oneClick);
-  // button.attachDoubleClick(doubleClick);
-  button.attachDuringLongPress(longPress);
-  // button.setDebounceTicks(80);
+  g_patternButton.attachClick(oneClick);
+  // g_patternButton.attachDoubleClick(doubleClick);
+  g_patternButton.attachDuringLongPress(longPress);
+  // g_patternButton.setDebounceTicks(80);
 }
 
 // Handle Button Events
 void handleButton()
 {
-  button.tick();
+  g_patternButton.tick();
 }
 
 // Change Palette Periodically
@@ -139,14 +139,14 @@ static void oneClick()
   printPatternAndPalette();
   _taskChangePattern.disable();
   changePattern(); // Change immediately
-  statled[0].setHue(0);
+  g_statusLed[0].setHue(0);
 }
 
 static void longPress()
 {
   Serial.println("Long press! Automode ON");
   _taskChangePattern.enable();
-  statled[0].setHue(100);
+  g_statusLed[0].setHue(100);
 }
 
 // Usage example in pattern transition:
@@ -159,13 +159,13 @@ void fade()
 {
   constexpr const char *SGN = "fade()";
 
-  if (fadeState == FADING_OUT)
+  if (g_fadeState == FADING_OUT)
   {
-    if (fadeCurrentBrightness > fadeTargetBrightness)
+    if (g_fadeCurrentBrightness > g_fadeTargetBrightness)
     {
-      fadeCurrentBrightness--;
-      // uint8_t scaledBrightness = calculatePowerScaledBrightness(fadeCurrentBrightness);
-      FastLED.setBrightness(fadeCurrentBrightness);
+      g_fadeCurrentBrightness--;
+      // uint8_t scaledBrightness = calculatePowerScaledBrightness(g_fadeCurrentBrightness);
+      FastLED.setBrightness(g_fadeCurrentBrightness);
       FastLED.show();
     }
     else
@@ -176,19 +176,19 @@ void fade()
 
       // Change pattern here
       gCurrentPatternNumber = (gCurrentPatternNumber + 1) % ARRAY_SIZE(gPatterns);
-      InitNeeded = 1;
+      g_patternInitNeeded = 1;
       printPatternAndPalette();
 
       // Start fade in
       startFadeIn();
     }
   }
-  else if (fadeState == FADING_IN)
+  else if (g_fadeState == FADING_IN)
   {
-    if (fadeCurrentBrightness < fadeTargetBrightness)
+    if (g_fadeCurrentBrightness < g_fadeTargetBrightness)
     {
-      fadeCurrentBrightness++;
-      FastLED.setBrightness(fadeCurrentBrightness);
+      g_fadeCurrentBrightness++;
+      FastLED.setBrightness(g_fadeCurrentBrightness);
       FastLED.show();
     }
     else
@@ -196,7 +196,7 @@ void fade()
       // Fade in complete
       Serial.printf("%s: Fade in complete\n", SGN);
       _taskFade.disable();
-      fadeState = FADE_NONE;
+      g_fadeState = FADE_NONE;
 
       // Re-enable tasks
       _taskReadPotentiometers.enable();
@@ -207,10 +207,10 @@ void fade()
 
 void startFadeOut()
 {
-  fadeState = FADING_OUT;
-  fadeStartBrightness = _currentBrightness;
-  fadeTargetBrightness = 0;
-  fadeCurrentBrightness = fadeStartBrightness;
+  g_fadeState = FADING_OUT;
+  g_fadeStartBrightness = g_currentBrightness;
+  g_fadeTargetBrightness = 0;
+  g_fadeCurrentBrightness = g_fadeStartBrightness;
 
   // Disable interfering tasks
   _taskReadPotentiometers.disable();
@@ -221,10 +221,10 @@ void startFadeOut()
 
 void startFadeIn()
 {
-  fadeState = FADING_IN;
-  fadeStartBrightness = 0;
-  fadeTargetBrightness = _currentBrightness;
-  fadeCurrentBrightness = fadeStartBrightness;
+  g_fadeState = FADING_IN;
+  g_fadeStartBrightness = 0;
+  g_fadeTargetBrightness = g_currentBrightness;
+  g_fadeCurrentBrightness = g_fadeStartBrightness;
 
   _taskFade.enable();
 }
@@ -248,18 +248,18 @@ void readPotentiometers()
 
   int brightnessPot = readPotentiometer(BRIGHTNESS_POT_PIN);
 
-  smoothedBrightnessPot += brightnessPot;
+  g_smoothedBrightnessPot += brightnessPot;
 
-  int mappedBrightness = map(smoothedBrightnessPot.get_avg(), 0, 4096, 0, MAX_BRIGHTNESS);
+  int mappedBrightness = map(g_smoothedBrightnessPot.get_avg(), 0, 4096, 0, MAX_BRIGHTNESS);
   if (lastMappedBrightness != mappedBrightness)
   {
     // _taskReadPotentiometers.disable(); // Disable the task if we're already changing brightness
-    _targetBrightness = mappedBrightness;
+    g_targetBrightness = mappedBrightness;
     _taskChangeToBrightness.enable();
     lastMappedBrightness = mappedBrightness;
   }
 
-  // Serial.println(smoothedBrightnessPot.get_avg());
+  // Serial.println(g_smoothedBrightnessPot.get_avg());
 }
 
 boolean changeToTarget(uint8_t target, uint8_t &current)
@@ -281,26 +281,26 @@ void changeToBrightness()
 {
 
   constexpr const char *SGN = "ChangeToBrightness()";
-  // Serial.printf("%s: %s: Adjusting Brightness: %u -> %u\n", timeToString().c_str(), SGN, _currentBrightness, _targetBrightness);
+  // Serial.printf("%s: %s: Adjusting Brightness: %u -> %u\n", timeToString().c_str(), SGN, g_currentBrightness, g_targetBrightness);
 
-  if (changeToTarget(_targetBrightness, _currentBrightness))
+  if (changeToTarget(g_targetBrightness, g_currentBrightness))
   {
     _taskChangeToBrightness.disable();
-    Serial.printf("%s: %s: Brightness adjusted to %u\n", timeToString().c_str(), SGN, _currentBrightness);
+    Serial.printf("%s: %s: Brightness adjusted to %u\n", timeToString().c_str(), SGN, g_currentBrightness);
     _taskReadPotentiometers.enable();
   }
 
   // this doesn't work reliably yet
-  // uint8_t scaledBrightness = calculatePowerScaledBrightness(_currentBrightness);
-  // Serial.println("Brightness: " + String(_currentBrightness) + " Scaled: " + String(scaledBrightness));
-  FastLED.setBrightness(_currentBrightness);
+  // uint8_t scaledBrightness = calculatePowerScaledBrightness(g_currentBrightness);
+  // Serial.println("Brightness: " + String(g_currentBrightness) + " Scaled: " + String(scaledBrightness));
+  FastLED.setBrightness(g_currentBrightness);
 }
 
 // Calculate the scaled brightness based on the current power usage
 // In theory this should keep brightness levels between animations consistent
 uint8_t calculatePowerScaledBrightness(uint8_t targetBrightness)
 {
-  uint32_t maxPower = calculate_max_brightness_for_power_mW(leds, NUM_LEDS, _currentBrightness, 800);
+  uint32_t maxPower = calculate_max_brightness_for_power_mW(leds, NUM_LEDS, g_currentBrightness, 800);
   Serial.println("Max power: " + String(maxPower));
   uint32_t usedPower = calculate_unscaled_power_mW(leds, NUM_LEDS);
   return scale8(targetBrightness, MAX_POWER_MILLIAMPS * 255 / usedPower);
