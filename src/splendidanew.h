@@ -54,9 +54,9 @@
 #define NUM_ROWS_PLANAR 20 // resolution of planar lookup table
 #define NUM_LEDS_PLANAR NUM_COLS_PLANAR *NUM_ROWS_PLANAR
 
-#define NUM_COLS_CILINDR 45 // resolution of cilindrical lookup table
-#define NUM_ROWS_CILINDR 11 // resolution of cinindrical lookup table
-#define NUM_LEDS_CILINDR NUM_COLS_CILINDR *NUM_ROWS_CILINDR
+#define NUM_COLS_CYLINDER 45 // resolution of cylindrical lookup table
+#define NUM_ROWS_CYLINDER 11 // resolution of cinindrical lookup table
+#define NUM_LEDS_CYLINDER NUM_COLS_CILINDR *NUM_ROWS_CYLINDER
 
 #define NUM_LEDS 256
 

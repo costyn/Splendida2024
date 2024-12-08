@@ -9,9 +9,9 @@ uint16_t XY_fibon_PLANAR(byte x, byte y)
   return (ledsindex);
 }
 
-uint16_t XY_CILINDR(byte x, byte y)
-{ // calculate index in leds from XY coordinates for cilindrical mapping
-  uint16_t ledsindex = pgm_read_word(FibonCilindrTable + y * NUM_COLS_CILINDR + x);
+uint16_t XY_CYLINDER(byte x, byte y)
+{ // calculate index in leds from XY coordinates for cylindrical mapping
+  uint16_t ledsindex = pgm_read_word(FibonCilindrTable + y * NUM_COLS_CYLINDER + x);
   return (ledsindex);
 }
 
@@ -446,7 +446,7 @@ void RGBTunnel()
   }
 }
 
-//_________________________ cilindrical map patterns
+//_________________________ cylindrical map patterns
 
 // RGB_Caleidoscope1_____________________________________
 
@@ -454,11 +454,11 @@ void RGB_Caleidoscope1()
 {
   uint16_t a = (uint16_t)gTimeAccumulator;
 
-  for (int j = 0; j < NUM_ROWS_CILINDR; j++)
+  for (int j = 0; j < NUM_ROWS_CYLINDER; j++)
   {
-    for (int i = 0; i < NUM_COLS_CILINDR; i++)
+    for (int i = 0; i < NUM_COLS_CYLINDER; i++)
     {
-      uint16_t index = XY_CILINDR(i, j);
+      uint16_t index = XY_CYLINDER(i, j);
       if (index == lastSafeIndex)
         continue;
 
@@ -477,11 +477,11 @@ void RGB_Caleidoscope2()
 {
   uint16_t a = (uint16_t)gTimeAccumulator;
 
-  for (int j = 0; j < NUM_ROWS_CILINDR; j++)
+  for (int j = 0; j < NUM_ROWS_CYLINDER; j++)
   {
-    for (int i = 0; i < NUM_COLS_CILINDR; i++)
+    for (int i = 0; i < NUM_COLS_CYLINDER; i++)
     {
-      uint16_t index = XY_CILINDR(i, j);
+      uint16_t index = XY_CYLINDER(i, j);
       if (index == lastSafeIndex)
         continue;
 
@@ -506,24 +506,24 @@ void Distortion_Waves_cylinder()
   uint16_t a2 = a / 2;
   uint16_t a3 = a / 3;
 
-  uint16_t cx = beatsin8(10 - speed, 0, NUM_COLS_CILINDR) * scale;
-  uint16_t cy = beatsin8(12 - speed, 0, NUM_ROWS_CILINDR) * scale;
-  uint16_t cx1 = beatsin8(13 - speed, 0, NUM_COLS_CILINDR) * scale;
-  uint16_t cy1 = beatsin8(15 - speed, 0, NUM_ROWS_CILINDR) * scale;
-  uint16_t cx2 = beatsin8(17 - speed, 0, NUM_COLS_CILINDR) * scale;
-  uint16_t cy2 = beatsin8(14 - speed, 0, NUM_ROWS_CILINDR) * scale;
+  uint16_t cx = beatsin8(10 - speed, 0, NUM_COLS_CYLINDER) * scale;
+  uint16_t cy = beatsin8(12 - speed, 0, NUM_ROWS_CYLINDER) * scale;
+  uint16_t cx1 = beatsin8(13 - speed, 0, NUM_COLS_CYLINDER) * scale;
+  uint16_t cy1 = beatsin8(15 - speed, 0, NUM_ROWS_CYLINDER) * scale;
+  uint16_t cx2 = beatsin8(17 - speed, 0, NUM_COLS_CYLINDER) * scale;
+  uint16_t cy2 = beatsin8(14 - speed, 0, NUM_ROWS_CYLINDER) * scale;
 
   uint16_t xoffs = 0;
 
-  for (int x = 0; x < NUM_COLS_CILINDR; x++)
+  for (int x = 0; x < NUM_COLS_CYLINDER; x++)
   {
 
     xoffs += scale;
     uint16_t yoffs = 0;
 
-    for (int y = 0; y < NUM_ROWS_CILINDR; y++)
+    for (int y = 0; y < NUM_ROWS_CYLINDER; y++)
     {
-      uint16_t index = XY_CILINDR(x, y);
+      uint16_t index = XY_CYLINDER(x, y);
       yoffs += scale;
 
       if (index == lastSafeIndex)
@@ -558,15 +558,15 @@ void FireButterfly()
 {
   uint16_t a = (uint16_t)(gTimeAccumulator * 2.67); // 8/3 = 2.67
 
-  for (int j = 0; j < NUM_ROWS_CILINDR; j++)
+  for (int j = 0; j < NUM_ROWS_CYLINDER; j++)
   {
-    for (int i = 0; i < NUM_COLS_CILINDR; i++)
+    for (int i = 0; i < NUM_COLS_CYLINDER; i++)
     {
-      uint16_t index = XY_CILINDR(i, j);
+      uint16_t index = XY_CYLINDER(i, j);
       if (index == lastSafeIndex)
         continue;
 
-      leds[index] = HeatColor(qsub8(inoise8(i * 60 + a, j * 5 + a, a / 3), abs8(j - (NUM_ROWS_CILINDR - 1)) * 255 / (NUM_ROWS_CILINDR + 2)));
+      leds[index] = HeatColor(qsub8(inoise8(i * 60 + a, j * 5 + a, a / 3), abs8(j - (NUM_ROWS_CYLINDER - 1)) * 255 / (NUM_ROWS_CYLINDER + 2)));
     }
   }
 }
@@ -580,13 +580,13 @@ void DrawOneFrameSprite(uint16_t xspeed, uint16_t yspeed, byte fract, byte *spri
   uint16_t indextable = 0;
   uint16_t colsX3 = (spr_cols << 1) + spr_cols; //*3
 
-  for (byte j = 0; j < NUM_ROWS_CILINDR; j++)
+  for (byte j = 0; j < NUM_ROWS_CYLINDER; j++)
   {
     uint16_t yoffs = ((j + yspeed) % spr_rows) * colsX3;
 
-    for (byte i = 0; i < NUM_COLS_CILINDR; i++)
+    for (byte i = 0; i < NUM_COLS_CYLINDER; i++)
     {
-      uint16_t index = XY_CILINDR(i, j);
+      uint16_t index = XY_CYLINDER(i, j);
 
       if (index == lastSafeIndex)
         continue;
@@ -611,11 +611,11 @@ void Swirl()
 {
   uint16_t a = (uint16_t)(gTimeAccumulator * 1.14); // 8/7 = 1.14
 
-  for (int j = 0; j < NUM_ROWS_CILINDR; j++)
+  for (int j = 0; j < NUM_ROWS_CYLINDER; j++)
   {
-    for (int i = 0; i < NUM_COLS_CILINDR; i++)
+    for (int i = 0; i < NUM_COLS_CYLINDER; i++)
     {
-      uint16_t index = XY_CILINDR((i + a / 32) % NUM_COLS_CILINDR, j);
+      uint16_t index = XY_CYLINDER((i + a / 32) % NUM_COLS_CYLINDER, j);
 
       if (index == lastSafeIndex)
         continue;
@@ -626,19 +626,51 @@ void Swirl()
   } // end cycles
 }
 
-// Cilindrical_Pattern_____________________________________
+// GPT o1-preview refactor of Swirl with floating-point math
+// Doesn't solve the issue yet, more experimentation needed
+void FloatingPointSwirl()
+{
+  // Use a floating-point variable for 'a'
+  float a = gTimeAccumulator * 1.14f; // 8/7 = 1.14
 
-void Cilindrical_Pattern()
+  for (int j = 0; j < NUM_ROWS_CYLINDER; j++)
+  {
+    for (int i = 0; i < NUM_COLS_CYLINDER; i++)
+    {
+      // Calculate offset with floating-point division
+      float offset = a / 32.0f;
+
+      // Compute the new x position with floating-point addition
+      float newX = fmod(i + offset, NUM_COLS_CYLINDER);
+
+      // Calculate index with proper casting
+      uint16_t index = XY_CYLINDER((uint8_t)newX, j);
+
+      if (index == lastSafeIndex)
+        continue;
+
+      // Compute hue using floating-point arithmetic
+      float hue = i * 56.0f + (a / 4.0f) + (sin8(j * 16 + (uint8_t)a) / 2.0f);
+
+      // Use nblend for smooth color transitions
+      nblend(leds[index], ColorFromPalette(gCurrentPalette, (uint8_t)hue, 255), 16);
+    }
+  }
+}
+
+// cylindrical_Pattern_____________________________________
+
+void cylindrical_Pattern()
 {
   uint16_t a = (uint16_t)(gTimeAccumulator * 0.67);
   float scale = (sin(a / 32 * PI / 180) * 16) + 32;
 
   float scale1 = 0;
-  for (int i = 0; i < NUM_COLS_CILINDR; i++)
+  for (int i = 0; i < NUM_COLS_CYLINDER; i++)
   {
-    for (int j = 0; j < NUM_ROWS_CILINDR; j++)
+    for (int j = 0; j < NUM_ROWS_CYLINDER; j++)
     {
-      uint16_t index = XY_CILINDR(i, j);
+      uint16_t index = XY_CYLINDER(i, j);
       if (index == lastSafeIndex)
         continue;
 
@@ -659,15 +691,15 @@ void Spiral()
   float scale = (sin(a / 32 * PI / 180) * 18) - 6;
 
   float scale1 = 0;
-  for (int i = 0; i < NUM_COLS_CILINDR; i++)
+  for (int i = 0; i < NUM_COLS_CYLINDER; i++)
   {
-    for (int j = 0; j < NUM_ROWS_CILINDR; j++)
+    for (int j = 0; j < NUM_ROWS_CYLINDER; j++)
     {
-      uint16_t index = XY_CILINDR(i, j);
+      uint16_t index = XY_CYLINDER(i, j);
       if (index == lastSafeIndex)
         continue;
 
-      CRGB newcolor = ColorFromPalette(gCurrentPalette, (i * 255 / (NUM_COLS_CILINDR - 1) + j * 255 / (NUM_ROWS_CILINDR - 1)) + (int)scale1 + a + sin16(a) / 16384, 255);
+      CRGB newcolor = ColorFromPalette(gCurrentPalette, (i * 255 / (NUM_COLS_CYLINDER - 1) + j * 255 / (NUM_ROWS_CYLINDER - 1)) + (int)scale1 + a + sin16(a) / 16384, 255);
       nblend(leds[index], newcolor, 16);
     }
     scale1 += scale;
@@ -689,29 +721,29 @@ void Spiral2()
   float scale = sin(a / 32 * PI / 180) * 12;
 
   float scale1 = 0;
-  for (int i = 0; i < NUM_COLS_CILINDR; i++)
+  for (int i = 0; i < NUM_COLS_CYLINDER; i++)
   {
-    for (int j = 0; j < NUM_ROWS_CILINDR / 2; j++)
+    for (int j = 0; j < NUM_ROWS_CYLINDER / 2; j++)
     {
-      uint16_t index = XY_CILINDR(i, j);
+      uint16_t index = XY_CYLINDER(i, j);
       if (index == lastSafeIndex)
         continue;
 
-      CRGB newcolor = ColorFromPalette(gCurrentPalette, (i * 255 / (NUM_COLS_CILINDR - 1) * 3 + j * 255 / (NUM_ROWS_CILINDR - 1) / 8) + a + sin16(a) / 16384, 255);
+      CRGB newcolor = ColorFromPalette(gCurrentPalette, (i * 255 / (NUM_COLS_CYLINDER - 1) * 3 + j * 255 / (NUM_ROWS_CYLINDER - 1) / 8) + a + sin16(a) / 16384, 255);
       nblend(leds[index], newcolor, 16);
     }
     scale1 += scale;
   }
 
-  for (int i = 0; i < NUM_COLS_CILINDR; i++)
+  for (int i = 0; i < NUM_COLS_CYLINDER; i++)
   {
-    for (int j = NUM_ROWS_CILINDR / 2; j < NUM_ROWS_CILINDR; j++)
+    for (int j = NUM_ROWS_CYLINDER / 2; j < NUM_ROWS_CYLINDER; j++)
     {
-      uint16_t index = XY_CILINDR(i, j);
+      uint16_t index = XY_CYLINDER(i, j);
       if (index == lastSafeIndex)
         continue;
 
-      CRGB newcolor = ColorFromPalette(gCurrentPalette, (i * 255 / (NUM_COLS_CILINDR - 1) * 3 - j * 255 / (NUM_ROWS_CILINDR - 1) / 8) - a + sin16(a) / 16384, 255);
+      CRGB newcolor = ColorFromPalette(gCurrentPalette, (i * 255 / (NUM_COLS_CYLINDER - 1) * 3 - j * 255 / (NUM_ROWS_CYLINDER - 1) / 8) - a + sin16(a) / 16384, 255);
       nblend(leds[index], newcolor, 32);
     }
     scale1 += scale;
@@ -724,14 +756,14 @@ void Flower()
 {
   uint16_t a = (uint16_t)gTimeAccumulator;
 
-  for (int j = 0; j < NUM_ROWS_CILINDR; j++)
+  for (int j = 0; j < NUM_ROWS_CYLINDER; j++)
   {
-    for (int i = 0; i < NUM_COLS_CILINDR; i++)
+    for (int i = 0; i < NUM_COLS_CYLINDER; i++)
     {
-      uint16_t index = XY_CILINDR(i, j);
+      uint16_t index = XY_CYLINDER(i, j);
       if (index == lastSafeIndex)
         continue;
-      CRGB newcolor = ColorFromPalette(gCurrentPalette, (j * 255 / (NUM_ROWS_CILINDR - 1) + sin8((i * 8 + a)) + sin8(i * 30 - a) + a) / 2, 255);
+      CRGB newcolor = ColorFromPalette(gCurrentPalette, (j * 255 / (NUM_ROWS_CYLINDER - 1) + sin8((i * 8 + a)) + sin8(i * 30 - a) + a) / 2, 255);
       nblend(leds[index], newcolor, 16);
     }
   }
@@ -908,28 +940,28 @@ void spiralCylinderWave()
   time += speed;
 
   // Loop through cylinder coordinates
-  for (uint8_t x = 0; x < NUM_COLS_CILINDR; x++)
+  for (uint8_t x = 0; x < NUM_COLS_CYLINDER; x++)
   {
-    for (uint8_t y = 0; y < NUM_ROWS_CILINDR; y++)
+    for (uint8_t y = 0; y < NUM_ROWS_CYLINDER; y++)
     {
       // Get LED index from coordinates
-      uint16_t index = XY_CILINDR(x, y);
+      uint16_t index = XY_CYLINDER(x, y);
 
       // Skip invalid indices
       if (index == lastSafeIndex || index >= NUM_LEDS)
         continue;
 
       // Calculate angle around the cylinder
-      float angle = ((float)x / NUM_COLS_CILINDR) * 2.0f * PI * waveLength;
+      float angle = ((float)x / NUM_COLS_CYLINDER) * 2.0f * PI * waveLength;
 
       // Calculate wave pattern
-      float wave = sin(angle + time + ((float)y / NUM_ROWS_CILINDR) * PI);
+      float wave = sin(angle + time + ((float)y / NUM_ROWS_CYLINDER) * PI);
 
       // Map wave to brightness (0-255)
       uint8_t brightness = (uint8_t)((wave + 1.0f) * amplitude); // wave ranges from -1 to 1
 
       // Get color from palette based on y position
-      uint8_t colorIndex = map(y, 0, NUM_ROWS_CILINDR - 1, 0, 255);
+      uint8_t colorIndex = map(y, 0, NUM_ROWS_CYLINDER - 1, 0, 255);
       CRGB color = ColorFromPalette(gCurrentPalette, colorIndex, brightness);
 
       // Set the LED color
@@ -940,19 +972,19 @@ void spiralCylinderWave()
 
 void testCylinderMapping()
 {
-  for (uint8_t y = 0; y < NUM_ROWS_CILINDR; y++)
+  for (uint8_t y = 0; y < NUM_ROWS_CYLINDER; y++)
   {
-    for (uint8_t x = 0; x < NUM_COLS_CILINDR; x++)
+    for (uint8_t x = 0; x < NUM_COLS_CYLINDER; x++)
     {
       // Get LED index from coordinates
-      uint16_t index = XY_CILINDR(x, y);
+      uint16_t index = XY_CYLINDER(x, y);
 
       // Skip invalid indices
       if (index == lastSafeIndex || index >= NUM_LEDS)
         continue;
 
       // Set color based on x-position to create a horizontal gradient
-      uint8_t hue = map(x, 0, NUM_COLS_CILINDR - 1, 0, 255);
+      uint8_t hue = map(x, 0, NUM_COLS_CYLINDER - 1, 0, 255);
 
       // Set LED color using HSV hue
       leds[index] = CHSV(hue, 255, 255);
@@ -968,11 +1000,11 @@ void testCylinderMapping2()
   // Calculate rotation angle based on time
   uint8_t scaledAngle = (uint8_t)(gTimeAccumulator * 0.333); // Adjust multiplier for speed
 
-  for (uint8_t y = 0; y < NUM_ROWS_CILINDR; y++)
+  for (uint8_t y = 0; y < NUM_ROWS_CYLINDER; y++)
   {
-    for (uint8_t x = 0; x < NUM_COLS_CILINDR; x++)
+    for (uint8_t x = 0; x < NUM_COLS_CYLINDER; x++)
     {
-      uint16_t index = XY_CILINDR(x, y);
+      uint16_t index = XY_CYLINDER(x, y);
       if (index == lastSafeIndex || index >= NUM_LEDS)
         continue;
 
@@ -980,8 +1012,8 @@ void testCylinderMapping2()
       int16_t rotatedX = ((int16_t)x * cos8(scaledAngle) - (int16_t)y * sin8(scaledAngle)) >> 8;
 
       // Map rotated position to hue
-      uint8_t hue = map(fmod(rotatedX, NUM_COLS_CILINDR),
-                        0, NUM_COLS_CILINDR - 1,
+      uint8_t hue = map(fmod(rotatedX, NUM_COLS_CYLINDER),
+                        0, NUM_COLS_CYLINDER - 1,
                         0, 255);
 
       // Set LED color using HSV hue
@@ -1002,16 +1034,16 @@ void hypnoticSpiral()
   time += speed;
 
   // Center coordinates
-  float centerX = NUM_COLS_CILINDR / 2.0;
-  float centerY = NUM_ROWS_CILINDR / 2.0;
+  float centerX = NUM_COLS_CYLINDER / 2.0;
+  float centerY = NUM_ROWS_CYLINDER / 2.0;
 
   // Loop through cylinder coordinates
-  for (uint8_t x = 0; x < NUM_COLS_CILINDR; x++)
+  for (uint8_t x = 0; x < NUM_COLS_CYLINDER; x++)
   {
-    for (uint8_t y = 0; y < NUM_ROWS_CILINDR; y++)
+    for (uint8_t y = 0; y < NUM_ROWS_CYLINDER; y++)
     {
       // Get LED index from coordinates
-      uint16_t index = XY_CILINDR(x, y);
+      uint16_t index = XY_CYLINDER(x, y);
 
       // Skip invalid indices
       if (index == lastSafeIndex || index >= NUM_LEDS)
@@ -1085,7 +1117,7 @@ void hypnoticSpiral()
 //     uint8_t y = currentLEDNumber / NUM_COLS_CILINDR;
 
 //     // Get LED index from coordinates
-//     uint16_t index = XY_CILINDR(x, y);
+//     uint16_t index = XY_CYLINDER(x, y);
 
 //     // Check if the index is valid
 //     if (index != lastSafeIndex && index < NUM_LEDS)
@@ -1122,7 +1154,7 @@ void hypnoticSpiral()
 //     currentLEDNumber++;
 
 //     // Reset if we've reached the end
-//     if (currentLEDNumber >= NUM_COLS_CILINDR * NUM_ROWS_CILINDR)
+//     if (currentLEDNumber >= NUM_COLS_CILINDR * NUM_ROWS_CYLINDER)
 //     {
 //       currentLEDNumber = 0;
 //     }
@@ -1136,7 +1168,7 @@ void hypnoticSpiral()
 typedef void (*SimplePatternList[])();
 SimplePatternList gPatterns = // this is list of patterns
     {
-        Cilindrical_Pattern,
+        cylindrical_Pattern,
         // identifyLEDs,
         // findCenter,
         testCylinderMapping2,
@@ -1166,7 +1198,7 @@ SimplePatternList gPatterns = // this is list of patterns
 };
 
 const char *patternNames[] = {
-    "Cilindrical_Pattern",
+    "cylindrical_Pattern",
     // "identifyLEDs",
     // "findCenter",
     "testCylinderMapping2",
