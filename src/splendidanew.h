@@ -48,6 +48,7 @@
 #define COLOR_ORDER GRB  // color order of leds
 
 #define MAX_POWER_MILLIAMPS 800 // write here your power in milliamps. default i set 800 mA for safety
+#define MAX_BRIGHTNESS 100      // max brightness of leds - will be limited by max power
 
 #define NUM_COLS_PLANAR 20 // resolution of planar lookup table
 #define NUM_ROWS_PLANAR 20 // resolution of planar lookup table
@@ -67,9 +68,10 @@
 
 // Potentiometers
 #define SMOOTHED_SAMPLE_SIZE 20
-#define BRIGHTNESS_THRESHOLD 2 // Adjust as needed
 Smooth smoothedSpeedPot(SMOOTHED_SAMPLE_SIZE);
 Smooth smoothedBrightnessPot(SMOOTHED_SAMPLE_SIZE);
+
+uint8_t calculatePowerScaledBrightness(uint8_t targetBrightness);
 
 uint16_t lastSafeIndex = 256;
 
@@ -80,7 +82,6 @@ byte rain[(NUM_COLS_PLANAR + 2) * (NUM_ROWS_PLANAR + 2)];
 
 OneButton button(BUTTON_PIN_INPUT, true);
 
-boolean automode = true; // change to false if you dont want automode on start
 byte InitNeeded = 1;
 
 uint8_t fadeStartBrightness = 0;

@@ -39,10 +39,7 @@ void setup()
   _taskChangeToBrightness.enable();
   _taskRunPattern.enable();
   _taskChangePalette.enable();
-  if (automode)
-  {
-    _taskChangePattern.enable();
-  }
+  _taskChangePattern.enable();
   _taskHandleButton.enable();
   _taskReadPotentiometers.enable();
   _taskBlendPalette.enable();
@@ -93,10 +90,6 @@ void initializeGPIO()
 void initializeSerial()
 {
   Serial.begin(115200);
-  if (automode)
-    Serial.println("automode On");
-  else
-    Serial.println("automode Off");
 }
 
 // Initialize LEDs
@@ -105,6 +98,8 @@ void initializeLEDs()
   FastLED.addLeds<LED_TYPE, DATA_PIN, COLOR_ORDER>(leds, NUM_LEDS);
   FastLED.addLeds<LED_TYPE, ATOMLED_PIN, COLOR_ORDER>(statled, 1);
   FastLED.setMaxPowerInVoltsAndMilliamps(5, MAX_POWER_MILLIAMPS);
+  FastLED.setCorrection(TypicalLEDStrip);
+  FastLED.setDither(BINARY_DITHER);
   FastLED.clear();
   gTargetPalette = gGradientPalettes[random8(gGradientPaletteCount)]; // Choose random palette on start
 }
@@ -141,16 +136,15 @@ void blendPalette()
 static void oneClick()
 {
   Serial.println("Clicked! Next pattern. automode OFF");
-  _taskChangePattern.enable();
-  _taskChangePattern.forceNextIteration();
+  printPatternAndPalette();
   _taskChangePattern.disable();
+  changePattern(); // Change immediately
   statled[0].setHue(0);
 }
 
 static void longPress()
 {
-  Serial.println("Long press!");
-  Serial.println("AutomodeOn");
+  Serial.println("Long press! Automode ON");
   _taskChangePattern.enable();
   statled[0].setHue(100);
 }
@@ -170,6 +164,7 @@ void fade()
     if (fadeCurrentBrightness > fadeTargetBrightness)
     {
       fadeCurrentBrightness--;
+      // uint8_t scaledBrightness = calculatePowerScaledBrightness(fadeCurrentBrightness);
       FastLED.setBrightness(fadeCurrentBrightness);
       FastLED.show();
     }
@@ -255,7 +250,7 @@ void readPotentiometers()
 
   smoothedBrightnessPot += brightnessPot;
 
-  int mappedBrightness = map(smoothedBrightnessPot.get_avg(), 0, 4096, 0, 150);
+  int mappedBrightness = map(smoothedBrightnessPot.get_avg(), 0, 4096, 0, MAX_BRIGHTNESS);
   if (lastMappedBrightness != mappedBrightness)
   {
     // _taskReadPotentiometers.disable(); // Disable the task if we're already changing brightness
@@ -295,7 +290,20 @@ void changeToBrightness()
     _taskReadPotentiometers.enable();
   }
 
+  // this doesn't work reliably yet
+  // uint8_t scaledBrightness = calculatePowerScaledBrightness(_currentBrightness);
+  // Serial.println("Brightness: " + String(_currentBrightness) + " Scaled: " + String(scaledBrightness));
   FastLED.setBrightness(_currentBrightness);
+}
+
+// Calculate the scaled brightness based on the current power usage
+// In theory this should keep brightness levels between animations consistent
+uint8_t calculatePowerScaledBrightness(uint8_t targetBrightness)
+{
+  uint32_t maxPower = calculate_max_brightness_for_power_mW(leds, NUM_LEDS, _currentBrightness, 800);
+  Serial.println("Max power: " + String(maxPower));
+  uint32_t usedPower = calculate_unscaled_power_mW(leds, NUM_LEDS);
+  return scale8(targetBrightness, MAX_POWER_MILLIAMPS * 255 / usedPower);
 }
 
 std::string timeToString()
