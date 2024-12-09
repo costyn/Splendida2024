@@ -35,13 +35,12 @@
 
 // Atom Matrix M5
 #ifdef M5ATOM
-#define DATA_PIN 26                // set your leds datapin   change to 32 for m5 atom lite
-#define ATOMLED_PIN 27             // set your leds datapin   change to 27 for m5 atom lite
-#define BUTTON_PIN_INPUT 39        // button pin              change to 39 for m5 atom lite
-#define EXTRA_BUTTON_PIN 22        // button pin              change to 39 for m5 atom lite
-#define BRIGHTNESS_POT_PIN 32      // Brightness potentiometer pin
-#define ADC_CHANNEL ADC1_CHANNEL_4 // Corresponding ADC channel for GPIO32
-#define SPEED_POT_PIN GPIO_NUM_33  // Speed potentiometer pin
+#define DATA_PIN 26           // set your leds datapin   change to 32 for m5 atom lite
+#define ATOMLED_PIN 21        // set your leds datapin   change to 27 for m5 atom lite
+#define BUTTON_PIN_INPUT 39   // button pin              change to 39 for m5 atom lite
+#define EXTRA_BUTTON_PIN 22   // button pin              change to 39 for m5 atom lite
+#define BRIGHTNESS_POT_PIN 32 // Brightness potentiometer pin
+#define SPEED_POT_PIN 33      // Speed potentiometer pin
 #endif
 
 #define LED_TYPE WS2812B // leds type
@@ -61,13 +60,13 @@
 #define NUM_LEDS 256
 
 // Animation Constants
-#define SECONDS_PER_PALETTE 10
-#define SECONDS_PER_PATTERN 45
+#define SECONDS_PER_PALETTE 20
+#define SECONDS_PER_PATTERN 60
 #define BLEND_SPEED 16
 #define BLEND_INTERVAL_MS 40
 
 // Potentiometers
-#define SMOOTHED_SAMPLE_SIZE 20
+#define SMOOTHED_SAMPLE_SIZE 10
 Smooth g_smoothedSpeedPot(SMOOTHED_SAMPLE_SIZE);
 Smooth g_smoothedBrightnessPot(SMOOTHED_SAMPLE_SIZE);
 
@@ -93,8 +92,12 @@ uint8_t g_targetBrightness = g_currentBrightness;
 
 uint8_t gCurrentPatternNumber = 0; // Index number of which pattern is current
 
-float g_timeAccumulator = 0;
-uint8_t g_animationSpeed = 8; // Adjust range as needed, controlled by pot
+#define MAX_ANIMATION_SPEED 0.4f
+#define MIN_ANIMATION_SPEED -0.4f
+float g_timeAccumulator = 0.0f;
+float g_animationSpeed = 0.2f; // Between -0.4 and 0.4
+
+float fmap(float x, float a, float b, float c, float d);
 
 enum FadeState
 {
@@ -117,7 +120,6 @@ std::string timeToString();
 
 #include "palettes.h"
 #include "tables.h"
-#include "patterns.h"
 
 // Function Prototypes
 void initializeGPIO();
@@ -143,5 +145,7 @@ Task _taskHandleButton(10 * TASK_MILLISECOND, TASK_FOREVER, &handleButton);
 Task _taskReadPotentiometers(100 * TASK_MILLISECOND, TASK_FOREVER, &readPotentiometers);
 Task _taskBlendPalette(BLEND_INTERVAL_MS *TASK_MILLISECOND, TASK_FOREVER, &blendPalette);
 Task _taskFade(10 * TASK_MILLISECOND, TASK_FOREVER, &fade);
+
+#include "patterns.h"
 
 #endif

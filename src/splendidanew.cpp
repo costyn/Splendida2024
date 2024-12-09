@@ -13,9 +13,6 @@
 // double click change bright in loop 0..maxbright with 7 steps. not affect to Automode
 // long press activate Automode ON
 
-// TODO:
-// Crossfade between patterns
-
 #include "splendidanew.h"
 
 // Setup function
@@ -43,6 +40,13 @@ void setup()
   _taskHandleButton.enable();
   _taskReadPotentiometers.enable();
   _taskBlendPalette.enable();
+
+  // Seed random number generator with noise from analog pin
+  randomSeed(analogRead(BRIGHTNESS_POT_PIN));
+  // Also seed FastLED's random
+  random16_set_seed(random());
+  // Pick a random palette on start
+  changePalette();
 }
 
 // Loop function
@@ -60,7 +64,7 @@ void runPattern()
 
   if (currentMillis - lastUpdate > 0)
   {
-    g_timeAccumulator += (float)(currentMillis - lastUpdate) / g_animationSpeed;
+    g_timeAccumulator += (float)(currentMillis - lastUpdate) * g_animationSpeed;
     lastUpdate = currentMillis;
   }
 
@@ -241,25 +245,38 @@ int readPotentiometer(uint8_t pin)
   }
   return 0;
 }
-
 void readPotentiometers()
 {
-  static int lastMappedBrightness = 0;
+  constexpr const char *SGN = "readPotentiometers()";
 
-  int brightnessPot = readPotentiometer(BRIGHTNESS_POT_PIN);
+  static uint16_t lastMappedBrightness = 0;
+  static float lastMappedSpeed = 0.0f;
+
+  // Read and smooth both potentiometers
+  uint16_t brightnessPot = readPotentiometer(BRIGHTNESS_POT_PIN);
+  uint16_t speedPot = readPotentiometer(SPEED_POT_PIN);
+  // Serial.printf("%s: %s: Raw pot %u\n", timeToString().c_str(), SGN, speedPot);
 
   g_smoothedBrightnessPot += brightnessPot;
+  g_smoothedSpeedPot += speedPot;
 
-  int mappedBrightness = map(g_smoothedBrightnessPot.get_avg(), 0, 4096, 0, MAX_BRIGHTNESS);
+  // Handle brightness - invert map function
+  int mappedBrightness = map(g_smoothedBrightnessPot.get_avg(), 0, 4096, MAX_BRIGHTNESS, 0);
   if (lastMappedBrightness != mappedBrightness)
   {
-    // _taskReadPotentiometers.disable(); // Disable the task if we're already changing brightness
     g_targetBrightness = mappedBrightness;
     _taskChangeToBrightness.enable();
     lastMappedBrightness = mappedBrightness;
   }
 
-  // Serial.println(g_smoothedBrightnessPot.get_avg());
+  // Handle speed - invert map function
+  float mappedSpeed = fmap(g_smoothedSpeedPot.get_avg(), 0, 4095, MAX_ANIMATION_SPEED, MIN_ANIMATION_SPEED);
+  if (abs(lastMappedSpeed - mappedSpeed) > 0.001f)
+  {
+    Serial.printf("%s: %s: Adjusting speed mapped %f\n", timeToString().c_str(), SGN, mappedSpeed);
+    g_animationSpeed = mappedSpeed;
+    lastMappedSpeed = mappedSpeed;
+  }
 }
 
 boolean changeToTarget(uint8_t target, uint8_t &current)
@@ -320,4 +337,10 @@ std::string timeToString()
   seconds %= 60;
   snprintf(myString, 20, "%02d:%02d:%02d:%02d.%03d", days, hours, minutes, seconds, remainder);
   return std::string(myString);
+}
+
+float fmap(float x, float a, float b, float c, float d)
+{
+  float f = x / (b - a) * (d - c) + c;
+  return f;
 }

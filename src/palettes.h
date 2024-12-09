@@ -16,7 +16,6 @@
 
 extern const TProgmemRGBGradientPaletteRef gGradientPalettes[];
 
-#define SECONDS_PER_PALETTE 10
 // Forward declarations of an array of cpt-city gradient palettes, and
 // a count of how many there are.  The actual color palette definitions
 // are at the bottom of this file.
