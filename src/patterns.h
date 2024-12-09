@@ -1,6 +1,10 @@
 #ifndef PATTERNS_H
 #define PATTERNS_H
 
+// A couple function prototypes
+// void changePalette();
+// Task _taskChangePalette(SECONDS_PER_PALETTE *TASK_SECOND, TASK_FOREVER, &changePalette);
+
 // system procedures_____________________________________
 
 uint16_t XY_fibon_PLANAR(byte x, byte y)
@@ -108,6 +112,7 @@ void DigitalRain()
     raininit();
     g_patternInitNeeded = 0;
     FastLED.clear();
+    _taskChangePalette.disable();
   }
   EVERY_N_MILLISECONDS(80) { updaterain(); }
   EVERY_N_MILLISECONDS(15) { changepattern(); }
@@ -115,10 +120,12 @@ void DigitalRain()
 
 void DiagonalPattern()
 {
+  _taskChangePalette.enableIfNot();
   // Get rotation angle from time
   float angle = g_timeAccumulator * 0.001; // Adjust speed multiplier as needed
   float centerX = NUM_COLS_PLANAR / 2.0;
   float centerY = NUM_ROWS_PLANAR / 2.0;
+  _taskChangePalette.enableIfNot();
 
   for (byte j = 0; j < NUM_ROWS_PLANAR; j++)
   {
@@ -151,6 +158,8 @@ void DiagonalPattern()
 
 void fire2021()
 {
+  _taskChangePalette.disable();
+
   int a = (int)(g_timeAccumulator * 8.0); // Multiply by 8 to get back to original speed
   int a1 = a / 3;
   for (byte j = 0; j < NUM_ROWS_PLANAR; j++)
@@ -169,6 +178,8 @@ void fire2021()
 
 void Distortion_Waves_planar()
 {
+  _taskChangePalette.enableIfNot();
+
   byte speed = 5;
   uint8_t scale = 2;
 
@@ -218,6 +229,8 @@ void Distortion_Waves_planar()
 
 void RGB_hiphotic()
 {
+  _taskChangePalette.disable();
+
   uint16_t a = (uint16_t)(g_timeAccumulator * 1.33);
   for (int x = 0; x < NUM_COLS_PLANAR; x++)
   {
@@ -236,6 +249,8 @@ void RGB_hiphotic()
 
 void mydrawLine_PB(byte x1, byte y1)
 { // draw line frim center
+  _taskChangePalette.disable();
+
   CRGB color;
   byte xsteps = abs8(NUM_COLS_PLANAR / 2 - x1) + 1;
   byte ysteps = abs8(NUM_ROWS_PLANAR / 2 - y1) + 1;
@@ -254,7 +269,9 @@ void mydrawLine_PB(byte x1, byte y1)
 
 void PlasmaBall()
 {
-  int8_t speed = 0;
+  _taskChangePalette.disable();
+
+  int8_t speed = (int)fmap(g_animationSpeed, MIN_ANIMATION_SPEED, MAX_ANIMATION_SPEED, 0, 10);
 
   byte x1 = beatsin8(18 + speed, 0, (NUM_COLS_PLANAR - 1));
   byte x2 = beatsin8(23 + speed, 0, (NUM_COLS_PLANAR - 1));
@@ -316,7 +333,8 @@ void fadecenter()
 
 void balls()
 {
-  byte speed = 10;
+  uint8_t speed = (int)fmap(g_animationSpeed, MIN_ANIMATION_SPEED, MAX_ANIMATION_SPEED, 0, 20);
+  // byte speed = 10;
   byte bright = 200;
 
   byte x = beatsin8(10 + speed, 2, NUM_COLS_PLANAR - 2);
@@ -359,6 +377,7 @@ void FireComets()
   {
     FastLED.clear();
     g_patternInitNeeded = 0;
+    _taskChangePalette.disable();
   }
   balls();
   fadecenter();
@@ -393,6 +412,8 @@ void mydrawLine_Fl(byte x, byte y, byte x1, byte y1, CRGB color, bool dot)
 
 void F_lying()
 {
+  _taskChangePalette.disable();
+
   static byte hue = 0;
   EVERY_N_MILLISECONDS(30) { hue++; } // 30 - speed of hue change
 
@@ -430,6 +451,7 @@ byte code(int x, int y, int t)
 
 void RGBTunnel()
 {
+  _taskChangePalette.enableIfNot();
   uint16_t t = (uint16_t)g_timeAccumulator;
 
   for (byte y = 0; y < NUM_ROWS_PLANAR; y++)
@@ -452,6 +474,7 @@ void RGBTunnel()
 
 void RGB_Caleidoscope1()
 {
+  _taskChangePalette.enableIfNot();
   uint16_t a = (uint16_t)g_timeAccumulator;
 
   for (int j = 0; j < NUM_ROWS_CYLINDER; j++)
@@ -475,6 +498,7 @@ void RGB_Caleidoscope1()
 
 void RGB_Caleidoscope2()
 {
+  _taskChangePalette.enableIfNot();
   uint16_t a = (uint16_t)g_timeAccumulator;
 
   for (int j = 0; j < NUM_ROWS_CYLINDER; j++)
@@ -498,6 +522,8 @@ void RGB_Caleidoscope2()
 
 void Distortion_Waves_cylinder()
 {
+  _taskChangePalette.disable();
+
   byte speed = 5;
   uint8_t w = 2;
   uint8_t scale = 2;
@@ -556,6 +582,8 @@ void Distortion_Waves_cylinder()
 
 void FireButterfly()
 {
+  _taskChangePalette.disable();
+
   uint16_t a = (uint16_t)(g_timeAccumulator * 2.67); // 8/3 = 2.67
 
   for (int j = 0; j < NUM_ROWS_CYLINDER; j++)
@@ -609,6 +637,7 @@ void DrawOneFrameSprite(uint16_t xspeed, uint16_t yspeed, byte fract, byte *spri
 // FIXME: This animation is a bit janky
 void Swirl()
 {
+  _taskChangePalette.enableIfNot();
   uint16_t a = (uint16_t)(g_timeAccumulator * 1.14); // 8/7 = 1.14
 
   for (int j = 0; j < NUM_ROWS_CYLINDER; j++)
@@ -630,6 +659,7 @@ void Swirl()
 // Doesn't solve the issue yet, more experimentation needed
 void FloatingPointSwirl()
 {
+  _taskChangePalette.enableIfNot();
   // Use a floating-point variable for 'a'
   float a = g_timeAccumulator * 1.14f; // 8/7 = 1.14
 
@@ -662,6 +692,7 @@ void FloatingPointSwirl()
 
 void cylindrical_Pattern()
 {
+  _taskChangePalette.enableIfNot();
   uint16_t a = (uint16_t)(g_timeAccumulator * 0.67);
   float scale = (sin(a / 32 * PI / 180) * 16) + 32;
 
@@ -686,6 +717,7 @@ void cylindrical_Pattern()
 
 void Spiral()
 {
+  _taskChangePalette.enableIfNot();
 
   uint16_t a = (uint16_t)g_timeAccumulator;
   float scale = (sin(a / 32 * PI / 180) * 18) - 6;
@@ -715,6 +747,7 @@ void Spiral2()
     raininit();
     g_patternInitNeeded = 0;
     FastLED.clear();
+    _taskChangePalette.enableIfNot();
   }
 
   uint16_t a = (uint16_t)(g_timeAccumulator * 1.33); // 8/6 = 1.33
@@ -754,6 +787,7 @@ void Spiral2()
 
 void Flower()
 {
+  _taskChangePalette.enableIfNot();
   uint16_t a = (uint16_t)g_timeAccumulator;
 
   for (int j = 0; j < NUM_ROWS_CYLINDER; j++)
@@ -778,6 +812,8 @@ void pride()
 // Animated, ever-changing rainbows.
 // by Mark Kriegsman
 {
+  _taskChangePalette.disable();
+
   static uint16_t sPseudotime = 0;
   static uint16_t sLastMillis = 0;
   static uint16_t sHue16 = 0;
@@ -835,6 +871,7 @@ void pride()
 
 void colorwaves()
 {
+  _taskChangePalette.enableIfNot();
   static uint16_t sPseudotime = 0;
   static uint16_t sLastMillis = 0;
   static uint16_t sHue16 = 0;
@@ -899,6 +936,7 @@ void SoftTwinkles()
   {
     FastLED.clear();
     g_patternInitNeeded = 0;
+    _taskChangePalette.disable();
   }
 
   static const CRGB lightcolor(0, 4, 4);
@@ -930,14 +968,11 @@ void SoftTwinkles()
 
 void spiralCylinderWave()
 {
-  // Constants for the animation
-  const float speed = 0.1;       // Controls the speed of the wave
-  const float waveLength = 3.0;  // Controls the number of waves around the cylinder
-  const float amplitude = 127.5; // Amplitude for brightness modulation (half of 255)
+  _taskChangePalette.enableIfNot();
 
-  // Time variable for animation
-  static float time = 0.0;
-  time += speed;
+  // Animation parameters
+  const float waveLength = 3.0f;       // Controls the number of waves around the cylinder
+  const float speedMultiplier = 0.05f; // Adjust this to control speed via g_timeAccumulator
 
   // Loop through cylinder coordinates
   for (uint8_t x = 0; x < NUM_COLS_CYLINDER; x++)
@@ -954,11 +989,11 @@ void spiralCylinderWave()
       // Calculate angle around the cylinder
       float angle = ((float)x / NUM_COLS_CYLINDER) * 2.0f * PI * waveLength;
 
-      // Calculate wave pattern
-      float wave = sin(angle + time + ((float)y / NUM_ROWS_CYLINDER) * PI);
+      // Use g_timeAccumulator for time-based animation
+      float wave = sin(angle + g_timeAccumulator * speedMultiplier + ((float)y / NUM_ROWS_CYLINDER) * PI);
 
       // Map wave to brightness (0-255)
-      uint8_t brightness = (uint8_t)((wave + 1.0f) * amplitude); // wave ranges from -1 to 1
+      uint8_t brightness = (uint8_t)((wave + 1.0f) * 127.5f); // wave ranges from -1 to 1
 
       // Get color from palette based on y position
       uint8_t colorIndex = map(y, 0, NUM_ROWS_CYLINDER - 1, 0, 255);
@@ -972,6 +1007,8 @@ void spiralCylinderWave()
 
 void testCylinderMapping()
 {
+  _taskChangePalette.disable();
+
   for (uint8_t y = 0; y < NUM_ROWS_CYLINDER; y++)
   {
     for (uint8_t x = 0; x < NUM_COLS_CYLINDER; x++)
@@ -994,9 +1031,6 @@ void testCylinderMapping()
 
 void testCylinderMapping2()
 {
-  // Rotation speed
-  const float rotationSpeed = 0.001;
-
   // Calculate rotation angle based on time
   uint8_t scaledAngle = (uint8_t)(g_timeAccumulator * 0.333); // Adjust multiplier for speed
 
@@ -1024,18 +1058,18 @@ void testCylinderMapping2()
 
 void hypnoticSpiral()
 {
+  _taskChangePalette.enableIfNot();
   // Animation parameters
-  const float speed = 0.05;      // Speed of the inward movement
-  const float frequency = 0.2;   // Controls the number of waves
-  const float amplitude = 127.5; // Half of 255 for brightness calculation
+  const float speedMultiplier = 0.05; // Speed of the inward movement
+  const float frequency = 0.2;        // Controls the number of waves
+  const float amplitude = 127.5;      // Half of 255 for brightness calculation
 
   // Time variable for animation
-  static float time = 0.0;
-  time += speed;
+  float time = g_timeAccumulator * speedMultiplier;
 
   // Center coordinates
-  float centerX = NUM_COLS_CYLINDER / 2.0;
-  float centerY = NUM_ROWS_CYLINDER / 2.0;
+  float centerX = NUM_COLS_CYLINDER / 1.9;
+  float centerY = NUM_ROWS_CYLINDER / 1.9;
 
   // Loop through cylinder coordinates
   for (uint8_t x = 0; x < NUM_COLS_CYLINDER; x++)
@@ -1048,15 +1082,6 @@ void hypnoticSpiral()
       // Skip invalid indices
       if (index == g_lastSafeIndex || index >= NUM_LEDS)
         continue;
-
-      // Debugging: Check if this is the problematic LED
-      // if (index == 85)
-      // {
-      //   Serial.print("LED 0 at index 85 found at x: ");
-      //   Serial.print(x);
-      //   Serial.print(", y: ");
-      //   Serial.println(y);
-      // }
 
       // Calculate distance from center
       float deltaX = x - centerX;
@@ -1075,25 +1100,59 @@ void hypnoticSpiral()
 
       // Set the LED color
       leds[index] = color;
+    }
+  }
+}
 
-      // Debugging: Print calculations for index 85
-      // if (index == 85)
-      // {
-      //   Serial.print("distance: ");
-      //   Serial.print(distance);
-      //   Serial.print(", wave: ");
-      //   Serial.print(wave);
-      //   Serial.print(", brightness: ");
-      //   Serial.println(brightness);
-      //   Serial.print("colorIndex: ");
-      //   Serial.print(colorIndex);
-      //   Serial.print(", color: ");
-      //   Serial.print(color.r);
-      //   Serial.print(", ");
-      //   Serial.print(color.g);
-      //   Serial.print(", ");
-      //   Serial.println(color.b);
-      // }
+void hypnoticWaves()
+{
+  _taskChangePalette.enableIfNot();
+  // Animation parameters
+  const float speedMultiplier = 0.025;         // Speed of the inward movement
+  const float frequency = 1.0;                 // Controls the number of waves
+  const float amplitude = g_currentBrightness; // Half of 255 for brightness calculation
+
+  // Time variable for animation
+  float time = g_timeAccumulator * speedMultiplier;
+
+  // Center coordinates
+  float centerX = NUM_COLS_PLANAR / 2.125; // Changed from 2.1 to 2.0 for true center
+  float centerY = NUM_ROWS_PLANAR / 2.125; // Changed from 2.1 to 2.0 for true center
+
+  // Calculate max possible distance for proper scaling
+  float maxDistance = sqrt((NUM_COLS_PLANAR * NUM_COLS_PLANAR) +
+                           (NUM_ROWS_PLANAR * NUM_ROWS_PLANAR)) /
+                      2.0;
+
+  // Loop through cylinder coordinates
+  for (uint8_t x = 0; x < NUM_COLS_PLANAR; x++)
+  {
+    for (uint8_t y = 0; y < NUM_ROWS_PLANAR; y++)
+    {
+      // Get LED index from coordinates
+      uint16_t index = XY_fibon_PLANAR(x, y);
+
+      // Skip invalid indices
+      if (index == g_lastSafeIndex || index >= NUM_LEDS)
+        continue;
+
+      // Calculate distance from center with slight offset to avoid zero
+      float deltaX = x - centerX;
+      float deltaY = y - centerY;
+      float distance = sqrt(deltaX * deltaX + deltaY * deltaY) + 0.5; // Added small offset
+
+      // Calculate wave pattern moving inward
+      float wave = sin(distance * frequency - time);
+
+      // Map wave to brightness (0-255)
+      uint8_t brightness = (uint8_t)((wave + 1.0f) * amplitude);
+
+      // Get color from the palette based on normalized distance
+      uint8_t colorIndex = map(distance * 16, 0, maxDistance * 16, 0, 255);
+
+      // Set the LED color with full brightness at center
+      CRGB color = ColorFromPalette(gCurrentPalette, colorIndex, brightness);
+      leds[index] = color;
     }
   }
 }
@@ -1171,13 +1230,14 @@ SimplePatternList gPatterns = // this is list of patterns
         cylindrical_Pattern,
         // identifyLEDs,
         // findCenter,
+        FireComets,
+        hypnoticWaves,
         testCylinderMapping2,
         DiagonalPattern,
         // testCylinderMapping,
         hypnoticSpiral,
         spiralCylinderWave,
         PlasmaBall,
-        FireComets,
         // F_lying,  // I don't like it enough.
         RGBTunnel,
         Flower,
@@ -1201,13 +1261,15 @@ const char *patternNames[] = {
     "cylindrical_Pattern",
     // "identifyLEDs",
     // "findCenter",
+    "FireComets",
+    "hypnoticWaves",
     "testCylinderMapping2",
     "DiagonalPattern",
     // "testCylinderMapping",
     "hypnoticSpiral",
     "spiralCylinderWave",
     "PlasmaBall",
-    "FireComets",
+
     // "F_lying",
     "RGBTunnel",
     "Flower",
