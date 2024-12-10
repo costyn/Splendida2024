@@ -76,10 +76,8 @@ void runPattern()
 
 void printPatternAndPalette()
 {
-  Serial.print("Pattern: ");
-  Serial.print(patternNames[gCurrentPatternNumber]);
-  Serial.print("\tPalette: ");
-  Serial.println(paletteNames[gCurrentPaletteNumber]);
+  constexpr const char *SGN = "printPatternAndPalette()";
+  Serial.printf("%s: %s: Pattern: %s \tPalette: %s\n", timeToString().c_str(), SGN, patternNames[gCurrentPatternNumber], paletteNames[gCurrentPaletteNumber]);
 }
 
 void initializeGPIO()
@@ -139,7 +137,9 @@ void blendPalette()
 
 static void oneClick()
 {
-  Serial.println("Clicked! Next pattern. automode OFF");
+  constexpr const char *SGN = "oneClick()";
+  Serial.printf("%s: %s: Clicked! Next pattern. automode OFF\n", timeToString().c_str(), SGN);
+
   printPatternAndPalette();
   _taskChangePattern.disable();
   changePattern(); // Change immediately
@@ -148,8 +148,9 @@ static void oneClick()
 
 static void longPress()
 {
-  Serial.println("Long press! Automode ON");
-  _taskChangePattern.enable();
+  constexpr const char *SGN = "longPress()";
+  Serial.printf("%s: %s: Long press! Automode ON\n", timeToString().c_str(), SGN);
+  _taskChangePattern.enableIfNot();
   g_statusLed[0].setHue(100);
 }
 
@@ -175,7 +176,7 @@ void fade()
     else
     {
       // Fade out complete
-      Serial.printf("%s: Fade out complete\n", SGN);
+      Serial.printf("%s: %s: Fade out complete\n", timeToString().c_str(), SGN);
       _taskFade.disable();
 
       // Change pattern here
@@ -198,7 +199,7 @@ void fade()
     else
     {
       // Fade in complete
-      Serial.printf("%s: Fade in complete\n", SGN);
+      Serial.printf("%s: %s: Fade in complete\n", timeToString().c_str(), SGN);
       _taskFade.disable();
       g_fadeState = FADE_NONE;
 
@@ -211,6 +212,9 @@ void fade()
 
 void startFadeOut()
 {
+  // constexpr const char *SGN = "startFadeOut()";
+  // Serial.printf("%s: %s: Starting\n", timeToString().c_str(), SGN);
+
   g_fadeState = FADING_OUT;
   g_fadeStartBrightness = g_currentBrightness;
   g_fadeTargetBrightness = 0;
@@ -225,6 +229,8 @@ void startFadeOut()
 
 void startFadeIn()
 {
+  // constexpr const char *SGN = "startFadeIn()";
+  // Serial.printf("%s: %s: Starting\n", timeToString().c_str(), SGN);
   g_fadeState = FADING_IN;
   g_fadeStartBrightness = 0;
   g_fadeTargetBrightness = g_currentBrightness;
@@ -273,8 +279,8 @@ void readPotentiometers()
   float mappedSpeed = fmap(g_smoothedSpeedPot.get_avg(), 0, 4095, MAX_ANIMATION_SPEED, MIN_ANIMATION_SPEED);
   if (abs(lastMappedSpeed - mappedSpeed) > 0.001f)
   {
-    Serial.printf("%s: %s: Adjusting speed mapped %f\n", timeToString().c_str(), SGN, mappedSpeed);
     g_animationSpeed = mappedSpeed;
+    Serial.printf("%s: %s: Adjusting speed. g_animationSpeed: %f\n", timeToString().c_str(), SGN, g_animationSpeed);
     lastMappedSpeed = mappedSpeed;
   }
 }
@@ -309,7 +315,8 @@ void changeToBrightness()
 
   // this doesn't work reliably yet
   // uint8_t scaledBrightness = calculatePowerScaledBrightness(g_currentBrightness);
-  // Serial.println("Brightness: " + String(g_currentBrightness) + " Scaled: " + String(scaledBrightness));
+  // Serial.printf("%s: %s: Brightness %u \tScaled: %u\n", timeToString().c_str(), SGN, g_currentBrightness, scaledBrightness);
+
   FastLED.setBrightness(g_currentBrightness);
 }
 
@@ -317,9 +324,11 @@ void changeToBrightness()
 // In theory this should keep brightness levels between animations consistent
 uint8_t calculatePowerScaledBrightness(uint8_t targetBrightness)
 {
+  constexpr const char *SGN = "calculatePowerScaledBrightness()";
   uint32_t maxPower = calculate_max_brightness_for_power_mW(leds, NUM_LEDS, g_currentBrightness, 800);
-  Serial.println("Max power: " + String(maxPower));
   uint32_t usedPower = calculate_unscaled_power_mW(leds, NUM_LEDS);
+  Serial.printf("%s: %s: Max power: %u, used power: %u\n", timeToString().c_str(), SGN, maxPower, usedPower);
+
   return scale8(targetBrightness, MAX_POWER_MILLIAMPS * 255 / usedPower);
 }
 

@@ -159,8 +159,9 @@ void DiagonalPattern()
 void fire2021()
 {
   _taskChangePalette.disable();
-
-  int a = (int)(g_timeAccumulator * 8.0); // Multiply by 8 to get back to original speed
+  // we don't want to use the g_timeAccumulator here,
+  // because the fire simulation doesn't look as good, when slowed or sped up.
+  int a = millis();
   int a1 = a / 3;
   for (byte j = 0; j < NUM_ROWS_PLANAR; j++)
   {
@@ -693,7 +694,7 @@ void FloatingPointSwirl()
 void cylindrical_Pattern()
 {
   _taskChangePalette.enableIfNot();
-  uint16_t a = (uint16_t)(g_timeAccumulator * 0.67);
+  uint16_t a = (uint16_t)(g_timeAccumulator * 0.333);
   float scale = (sin(a / 32 * PI / 180) * 16) + 32;
 
   float scale1 = 0;
@@ -1227,14 +1228,12 @@ void hypnoticWaves()
 typedef void (*SimplePatternList[])();
 SimplePatternList gPatterns = // this is list of patterns
     {
+        SoftTwinkles,
         cylindrical_Pattern,
-        // identifyLEDs,
-        // findCenter,
         FireComets,
         hypnoticWaves,
         testCylinderMapping2,
         DiagonalPattern,
-        // testCylinderMapping,
         hypnoticSpiral,
         spiralCylinderWave,
         PlasmaBall,
@@ -1245,7 +1244,6 @@ SimplePatternList gPatterns = // this is list of patterns
         colorwaves,
         Distortion_Waves_planar,
         FireButterfly,
-        SoftTwinkles,
         Spiral2,
         pride,
         RGB_Caleidoscope2,
@@ -1258,18 +1256,15 @@ SimplePatternList gPatterns = // this is list of patterns
 };
 
 const char *patternNames[] = {
+    "SoftTwinkles",
     "cylindrical_Pattern",
-    // "identifyLEDs",
-    // "findCenter",
     "FireComets",
     "hypnoticWaves",
     "testCylinderMapping2",
     "DiagonalPattern",
-    // "testCylinderMapping",
     "hypnoticSpiral",
     "spiralCylinderWave",
     "PlasmaBall",
-
     // "F_lying",
     "RGBTunnel",
     "Flower",
@@ -1277,7 +1272,6 @@ const char *patternNames[] = {
     "colorwaves",
     "Distortion_Waves_planar",
     "FireButterfly",
-    "SoftTwinkles",
     "Spiral2",
     "pride",
     "RGB_Caleidoscope2",
