@@ -14,6 +14,14 @@ This sketch uses one button to control patterns and brightness. The ESP32 M5 Ato
 
 ### Controls:
 
+Modes:
+- Brightness mode: color blue
+- Speed mode: color orange
+- Single click to move between brightness and speed modes
+- Double click to disable/enable auto, knob -> pattern selection
+- 
+
+
 - The firmware starts with Automode ON, and if the button is not pressed, patterns change in a loop.
 - If the button is clicked once, Automode is OFF, and you can change to the next pattern by clicking the button.
 - If the button is double-clicked, the brightness changes in a loop from 0 to maximum brightness in 7 steps (I think this is the best method to control brightness). Double-clicking does not affect the Automode state.

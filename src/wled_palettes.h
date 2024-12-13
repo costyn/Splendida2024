@@ -1,3 +1,6 @@
+#ifndef PalettesWLED_h
+#define PalettesWLED_h
+
 /*
  * Color palettes for FastLED effects (65-73).
  */
@@ -9,9 +12,6 @@
 // http://soliton.vm.bytemark.co.uk/pub/cpt-city/ing/xmas/tn/ib_jul01.png.index.html
 // converted for FastLED with gammas (2.6, 2.2, 2.5)
 // Size: 16 bytes of program space.
-
-#ifndef PalettesWLED_h
-#define PalettesWLED_h
 
 #include <FastLED.h>
 
