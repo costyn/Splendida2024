@@ -27,14 +27,14 @@ void encoderSetup()
         i2cEncoderLibV2::RMOD_X1 |
         i2cEncoderLibV2::RGB_ENCODER);
     RGBEncoder.id = 0;                      // do we need this?
-    RGBEncoder.writeAntibouncingPeriod(25); // 250ms of debouncing
-    RGBEncoder.writeDoublePushPeriod(100);  // Set the double push period to 500ms
+    RGBEncoder.writeAntibouncingPeriod(10); // 250ms of debouncing
+    RGBEncoder.writeDoublePushPeriod(50);   // Set the double push period to 500ms
+
+    setEncoderState(&RGBEncoder, BRIGHTNESS); // Initial state
 
     /* Configure the callback events */
     RGBEncoder.onChange = encoder_onChange;
     RGBEncoder.onButtonPush = encoder_onClick;
-    RGBEncoder.onMinMax = encoder_onMinMax;
-    RGBEncoder.onFadeProcess = encoder_onFadeEnd;
     RGBEncoder.onButtonDoublePush = encoder_doubleClick;
 
     /* Enable the I2C Encoder V2 interrupts according to the previus attached callback */
@@ -50,10 +50,6 @@ void readEncoders()
 {
     if (digitalRead(I2C_INT_PIN) == LOW)
     {
-        if (digitalRead(I2C_INT_PIN) == HIGH)
-        { // If the interrupt pin return high, exit from the encoder scan
-            return;
-        }
         RGBEncoder.updateStatus();
     }
 }
@@ -95,68 +91,33 @@ void encoder_onChange(i2cEncoderLibV2 *obj)
     }
 }
 
-// a function to that will select the next EncoderState when the button is pressed
+// Toggle between BRIGHTNESS and SPEED
 void encoder_onClick(i2cEncoderLibV2 *obj)
 {
-    constexpr const char *SGN = "encoder_onClick()";
-
-    switch (g_encoderState)
-    {
-    case BRIGHTNESS:
-        obj->writeRGBCode(0x00FFFF);
-        g_encoderState = SPEED;
-        Serial.printf("%s: %s: EncoderState: SPEED\n", timeToString().c_str(), SGN);
-        break;
-    default:
-    case SPEED:
-        g_encoderState = BRIGHTNESS;
-        Serial.printf("%s: %s: EncoderState: BRIGHTNESS\n", timeToString().c_str(), SGN);
-        obj->writeRGBCode(0xFF0000);
-        break;
-    }
+    setEncoderState(obj, g_encoderState == BRIGHTNESS ? SPEED : BRIGHTNESS);
 }
 
 void encoder_doubleClick(i2cEncoderLibV2 *obj)
 {
+    obj->writeRGBCode(0xFFFFFF); // White
     constexpr const char *SGN = "encoder_doubleClick()";
     Serial.printf("%s: %s: Initiating change pattern\n", timeToString().c_str(), SGN);
     changePattern();
 }
 
-void encoder_onMinMax(i2cEncoderLibV2 *obj)
+void setEncoderState(i2cEncoderLibV2 *obj, EncoderState state)
 {
-    constexpr const char *SGN = "encoder_onMinMax()";
+    constexpr const char *SGN = "setEncoderState()";
 
-    obj->writeRGBCode(0xFF0000);
-
-    if (obj->readStatus(i2cEncoderLibV2::RMAX))
-        Serial.printf("%s: %s: Max\n", timeToString().c_str(), SGN);
-    else
-        Serial.printf("%s: %s: Min\n", timeToString().c_str(), SGN);
-}
-
-void encoder_onFadeEnd(i2cEncoderLibV2 *obj)
-{
-    obj->writeRGBCode(0x000000);
-}
-
-void encoderColorFeedback(i2cEncoderLibV2 *obj, EncoderEvent event)
-{
-    if (event == ROTATE)
+    switch (state)
     {
-        obj->writeRGBCode(0xFFFFFF);
+    case BRIGHTNESS:
+        obj->writeRGBCode(0xFF0000); // Red
+        break;
+    case SPEED:
+        obj->writeRGBCode(0x00FFFF); // Cyan
+        break;
     }
-    if (event == CLICK)
-    {
-        obj->writeRGBCode(0x00FFFF);
-    }
-    if (event == LIMIT)
-    {
-        obj->writeRGBCode(0xFF0000);
-    }
-}
-
-void setBrightness(int brightness)
-{
-    RGBEncoder.writeCounter((int32_t)brightness);
+    g_encoderState = state;
+    Serial.printf("%s: %s: EncoderState: %s\n", timeToString().c_str(), SGN, state == BRIGHTNESS ? "BRIGHTNESS" : "SPEED");
 }

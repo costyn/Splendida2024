@@ -40,13 +40,11 @@ extern Task _taskChangeToBrightness; // Declare the external task
 // Function Prototypes
 void encoder_onChange(i2cEncoderLibV2 *obj);
 void encoder_onClick(i2cEncoderLibV2 *obj);
-void encoder_onMinMax(i2cEncoderLibV2 *obj);
 void encoder_onFadeEnd(i2cEncoderLibV2 *obj);
 void encoder_doubleClick(i2cEncoderLibV2 *obj);
 void encoderColorFeedback(i2cEncoderLibV2 *obj, EncoderEvent event);
 
-void setPreset(int presetIndex);
-void setBrightness(int brightness);
+void setEncoderState(i2cEncoderLibV2 *obj, EncoderState state);
 
 void changePattern();
 std::string timeToString();

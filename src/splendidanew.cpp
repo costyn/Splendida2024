@@ -213,8 +213,8 @@ void fade()
 
 void startFadeOut()
 {
-  // constexpr const char *SGN = "startFadeOut()";
-  // Serial.printf("%s: %s: Starting\n", timeToString().c_str(), SGN);
+  constexpr const char *SGN = "startFadeOut()";
+  Serial.printf("%s: %s: Starting\n", timeToString().c_str(), SGN);
 
   g_fadeState = FADING_OUT;
   g_fadeStartBrightness = g_currentBrightness;
@@ -229,8 +229,8 @@ void startFadeOut()
 
 void startFadeIn()
 {
-  // constexpr const char *SGN = "startFadeIn()";
-  // Serial.printf("%s: %s: Starting\n", timeToString().c_str(), SGN);
+  constexpr const char *SGN = "startFadeIn()";
+  Serial.printf("%s: %s: Starting\n", timeToString().c_str(), SGN);
   g_fadeState = FADING_IN;
   g_fadeStartBrightness = 0;
   g_fadeTargetBrightness = g_currentBrightness;
