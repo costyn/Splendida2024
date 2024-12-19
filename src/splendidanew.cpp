@@ -14,35 +14,58 @@
 // long press activate Automode ON
 
 #include "splendidanew.h"
+#include "encoders.h"
+
+uint8_t g_targetBrightness = DEFAULT_BRIGHTNESS;
+uint8_t g_currentBrightness = 0;
+float g_animationSpeed = 0.15f;
+float g_timeAccumulator = 0.0f;
+uint8_t gCurrentPatternNumber = 0;
+CRGB g_statusLed[1];
+byte g_patternInitNeeded = 1;
+uint8_t g_fadeState = FADE_NONE;
+CRGB leds[NUM_LEDS];
+uint8_t g_lastSafeIndex = 255;
+uint8_t g_fadeStartBrightness = 0;
+uint8_t g_fadeTargetBrightness = 0;
+uint8_t g_fadeCurrentBrightness = 0;
+CRGBPalette16 gTargetPalette = gGradientPalettes[random8(gGradientPaletteCount)]; // Choose random palette on start
+
+Scheduler _runner;
+Task _taskChangeToBrightness(10 * TASK_MILLISECOND, TASK_FOREVER, &changeToBrightness);
+Task _taskRunPattern(1 * TASK_MILLISECOND, TASK_FOREVER, &runPattern);
+Task _taskChangePalette(SECONDS_PER_PALETTE *TASK_SECOND, TASK_FOREVER, &changePalette);
+Task _taskChangePattern(SECONDS_PER_PATTERN *TASK_SECOND, TASK_FOREVER, &changePattern);
+Task _taskBlendPalette(BLEND_INTERVAL_MS *TASK_MILLISECOND, TASK_FOREVER, &blendPalette);
+Task _taskFade(10 * TASK_MILLISECOND, TASK_FOREVER, &fade);
+Task _taskReadEncoders(10 * TASK_MILLISECOND, TASK_FOREVER, &readEncoders);
 
 // Setup function
 void setup()
 {
-  initializeGPIO();
+
   initializeSerial();
   initializeLEDs();
-  initializeButton();
+  encoderSetup();
 
   _runner.init();
   _runner.addTask(_taskChangeToBrightness);
   _runner.addTask(_taskRunPattern);
   _runner.addTask(_taskChangePalette);
   _runner.addTask(_taskChangePattern);
-  _runner.addTask(_taskHandleButton);
-  _runner.addTask(_taskReadPotentiometers);
   _runner.addTask(_taskBlendPalette);
+  _runner.addTask(_taskReadEncoders);
   _runner.addTask(_taskFade);
 
   _taskChangeToBrightness.enable();
   _taskRunPattern.enable();
   _taskChangePalette.enable();
   _taskChangePattern.enable();
-  _taskHandleButton.enable();
-  _taskReadPotentiometers.enable();
   _taskBlendPalette.enable();
+  _taskReadEncoders.enable();
 
   // Seed random number generator with noise from analog pin
-  randomSeed(analogRead(BRIGHTNESS_POT_PIN));
+  randomSeed(analogRead(32));
   // Also seed FastLED's random
   random16_set_seed(random());
   // Pick a random palette on start
@@ -80,14 +103,6 @@ void printPatternAndPalette()
   Serial.printf("%s: %s: Pattern: %s \tPalette: %s\n", timeToString().c_str(), SGN, patternNames[gCurrentPatternNumber], paletteNames[gCurrentPaletteNumber]);
 }
 
-void initializeGPIO()
-{
-  // Configure ADC
-  adc1_config_width(ADC_WIDTH_BIT_12);
-  adc1_config_channel_atten(ADC1_CHANNEL_4, ADC_ATTEN_DB_12);
-  adc1_config_channel_atten(ADC1_CHANNEL_5, ADC_ATTEN_DB_12);
-}
-
 // Initialize Serial Communication
 void initializeSerial()
 {
@@ -106,21 +121,6 @@ void initializeLEDs()
   gTargetPalette = gGradientPalettes[random8(gGradientPaletteCount)]; // Choose random palette on start
 }
 
-// Initialize Button
-void initializeButton()
-{
-  g_patternButton.attachClick(oneClick);
-  // g_patternButton.attachDoubleClick(doubleClick);
-  g_patternButton.attachDuringLongPress(longPress);
-  // g_patternButton.setDebounceTicks(80);
-}
-
-// Handle Button Events
-void handleButton()
-{
-  g_patternButton.tick();
-}
-
 // Change Palette Periodically
 void changePalette()
 {
@@ -135,6 +135,7 @@ void blendPalette()
   nblendPaletteTowardPalette(gCurrentPalette, gTargetPalette, BLEND_SPEED);
 }
 
+// TODO
 static void oneClick()
 {
   constexpr const char *SGN = "oneClick()";
@@ -146,6 +147,7 @@ static void oneClick()
   g_statusLed[0].setHue(0);
 }
 
+// TODO
 static void longPress()
 {
   constexpr const char *SGN = "longPress()";
@@ -180,7 +182,7 @@ void fade()
       _taskFade.disable();
 
       // Change pattern here
-      gCurrentPatternNumber = (gCurrentPatternNumber + 1) % ARRAY_SIZE(gPatterns);
+      gCurrentPatternNumber = (gCurrentPatternNumber + 1) % NUM_PATTERNS;
       g_patternInitNeeded = 1;
       printPatternAndPalette();
 
@@ -204,7 +206,6 @@ void fade()
       g_fadeState = FADE_NONE;
 
       // Re-enable tasks
-      _taskReadPotentiometers.enable();
       _taskChangeToBrightness.enable();
     }
   }
@@ -221,7 +222,6 @@ void startFadeOut()
   g_fadeCurrentBrightness = g_fadeStartBrightness;
 
   // Disable interfering tasks
-  _taskReadPotentiometers.disable();
   _taskChangeToBrightness.disable();
 
   _taskFade.enable();
@@ -237,52 +237,6 @@ void startFadeIn()
   g_fadeCurrentBrightness = g_fadeStartBrightness;
 
   _taskFade.enable();
-}
-
-int readPotentiometer(uint8_t pin)
-{
-  if (pin == BRIGHTNESS_POT_PIN)
-  {
-    return adc1_get_raw(ADC1_CHANNEL_4);
-  }
-  else if (pin == SPEED_POT_PIN)
-  {
-    return adc1_get_raw(ADC1_CHANNEL_5);
-  }
-  return 0;
-}
-void readPotentiometers()
-{
-  constexpr const char *SGN = "readPotentiometers()";
-
-  static uint16_t lastMappedBrightness = 0;
-  static float lastMappedSpeed = 0.0f;
-
-  // Read and smooth both potentiometers
-  uint16_t brightnessPot = readPotentiometer(BRIGHTNESS_POT_PIN);
-  uint16_t speedPot = readPotentiometer(SPEED_POT_PIN);
-  // Serial.printf("%s: %s: Raw pot %u\n", timeToString().c_str(), SGN, speedPot);
-
-  g_smoothedBrightnessPot += brightnessPot;
-  g_smoothedSpeedPot += speedPot;
-
-  // Handle brightness - invert map function
-  int mappedBrightness = map(g_smoothedBrightnessPot.get_avg(), 0, 4096, MAX_BRIGHTNESS, 0);
-  if (lastMappedBrightness != mappedBrightness)
-  {
-    g_targetBrightness = mappedBrightness;
-    _taskChangeToBrightness.enable();
-    lastMappedBrightness = mappedBrightness;
-  }
-
-  // Handle speed - invert map function
-  float mappedSpeed = fmap(g_smoothedSpeedPot.get_avg(), 0, 4095, MAX_ANIMATION_SPEED, MIN_ANIMATION_SPEED);
-  if (abs(lastMappedSpeed - mappedSpeed) > 0.001f)
-  {
-    g_animationSpeed = mappedSpeed;
-    Serial.printf("%s: %s: Adjusting speed. g_animationSpeed: %f\n", timeToString().c_str(), SGN, g_animationSpeed);
-    lastMappedSpeed = mappedSpeed;
-  }
 }
 
 boolean changeToTarget(uint8_t target, uint8_t &current)
@@ -310,7 +264,6 @@ void changeToBrightness()
   {
     _taskChangeToBrightness.disable();
     Serial.printf("%s: %s: Brightness adjusted to %u\n", timeToString().c_str(), SGN, g_currentBrightness);
-    _taskReadPotentiometers.enable();
   }
 
   // this doesn't work reliably yet
