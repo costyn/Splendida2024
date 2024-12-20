@@ -168,6 +168,7 @@ void changePattern()
 void fade()
 {
   constexpr const char *SGN = "fade()";
+  Serial.printf("%s", g_fadeState == FADING_IN ? "+" : "-");
 
   if (g_fadeState == FADING_OUT)
   {

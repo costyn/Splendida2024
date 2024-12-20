@@ -64,13 +64,31 @@ void encoder_onChange(i2cEncoderLibV2 *obj)
     {
     case BRIGHTNESS:
         setEncoderColor(obj, BRIGHTNESS);
-        if (increasing)
+        uint8_t step;
+        if (g_targetBrightness < 20)
         {
-            g_targetBrightness = min(MAX_BRIGHTNESS, g_targetBrightness + BRIGHNESS_STEP);
+            step = 1; // Fine control at low brightness
+        }
+        else if (g_targetBrightness < 60)
+        {
+            step = 3; // Medium steps
+        }
+        else if (g_targetBrightness < 150)
+        {
+            step = 5; // Larger steps
         }
         else
         {
-            g_targetBrightness = max(MIN_BRIGHTNESS, g_targetBrightness - BRIGHNESS_STEP);
+            step = 10; // Biggest steps at high brightness
+        }
+
+        if (increasing)
+        {
+            g_targetBrightness = min(MAX_BRIGHTNESS, g_targetBrightness + step);
+        }
+        else
+        {
+            g_targetBrightness = max(MIN_BRIGHTNESS, g_targetBrightness - step);
         }
         Serial.printf("%s: Brightness target: %d\n", SGN, g_targetBrightness);
         _taskChangeToBrightness.enableIfNot();
