@@ -39,6 +39,7 @@ Task _taskChangePattern(SECONDS_PER_PATTERN *TASK_SECOND, TASK_FOREVER, &changeP
 Task _taskBlendPalette(BLEND_INTERVAL_MS *TASK_MILLISECOND, TASK_FOREVER, &blendPalette);
 Task _taskFade(10 * TASK_MILLISECOND, TASK_FOREVER, &fade);
 Task _taskReadEncoders(10 * TASK_MILLISECOND, TASK_FOREVER, &readEncoders);
+Task _taskEncoderAnimation(25 * TASK_MILLISECOND, TASK_FOREVER, &updateEncoderIdleAnimation);
 
 // Setup function
 void setup()
@@ -56,6 +57,7 @@ void setup()
   _runner.addTask(_taskBlendPalette);
   _runner.addTask(_taskReadEncoders);
   _runner.addTask(_taskFade);
+  _runner.addTask(_taskEncoderAnimation);
 
   _taskChangeToBrightness.enable();
   _taskRunPattern.enable();
@@ -63,6 +65,7 @@ void setup()
   _taskChangePattern.enable();
   _taskBlendPalette.enable();
   _taskReadEncoders.enable();
+  _taskEncoderAnimation.enable();
 
   // Seed random number generator with noise from analog pin
   randomSeed(analogRead(32));

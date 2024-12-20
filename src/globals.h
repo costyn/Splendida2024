@@ -52,6 +52,8 @@
 
 #define NUM_PATTERNS 25
 
+#define ENCODER_ANIMATION_IDLE_TIMEOUT 5000
+
 typedef void (*SimplePatternList[])();
 
 // Extern declarations of global variables

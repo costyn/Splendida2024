@@ -47,4 +47,6 @@ void fade();
 void readEncoders();
 void encoderSetup();
 
+void updateEncoderIdleAnimation();
+
 #endif // SPLENDIDANEW_H
