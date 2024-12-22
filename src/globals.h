@@ -73,7 +73,6 @@ extern CRGB leds[NUM_LEDS];
 extern const char *patternNames[];
 extern uint8_t gCurrentPaletteNumber;
 
-extern uint8_t g_fadeStartBrightness;
 extern uint8_t g_fadeTargetBrightness;
 extern uint8_t g_fadeCurrentBrightness;
 

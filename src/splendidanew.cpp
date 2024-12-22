@@ -26,7 +26,6 @@ byte g_patternInitNeeded = 1;
 uint8_t g_fadeState = FADE_NONE;
 CRGB leds[NUM_LEDS];
 uint8_t g_lastSafeIndex = 255;
-uint8_t g_fadeStartBrightness = 0;
 uint8_t g_fadeTargetBrightness = 0;
 uint8_t g_fadeCurrentBrightness = 0;
 CRGBPalette16 gTargetPalette = gGradientPalettes[random8(gGradientPaletteCount)]; // Choose random palette on start
@@ -162,56 +161,87 @@ static void longPress()
 // Usage example in pattern transition:
 void changePattern()
 {
+  Serial.printf("changePattern\n");
   startFadeOut();
 }
 
 void fade()
 {
   constexpr const char *SGN = "fade()";
-  Serial.printf("%s", g_fadeState == FADING_IN ? "+" : "-");
+
+  Serial.printf("%s: State:%s Curr:%d Target:%d\n",
+                SGN,
+                g_fadeState == FADING_OUT ? "OUT" : "IN",
+                g_fadeCurrentBrightness,
+                g_fadeTargetBrightness);
+
+  if (g_fadeState == FADING_IN && g_fadeCurrentBrightness > g_fadeTargetBrightness)
+  {
+    Serial.printf("g_fadeState == FADING_IN && g_fadeCurrentBrightness > g_fadeTargetBrightness\n");
+
+    _taskFade.disable();
+    g_fadeState = FADE_NONE;
+    return;
+  }
+  if (g_fadeState == FADING_OUT && g_fadeCurrentBrightness < g_fadeTargetBrightness)
+  {
+    Serial.printf("g_fadeState == FADING_OUT && g_fadeCurrentBrightness < g_fadeTargetBrightness\n");
+
+    _taskFade.disable();
+    g_fadeState = FADE_NONE;
+    return;
+  }
+  Serial.printf(".");
 
   if (g_fadeState == FADING_OUT)
   {
+    Serial.printf("g_fadeState == FADING_OUT");
+
     if (g_fadeCurrentBrightness > g_fadeTargetBrightness)
     {
       g_fadeCurrentBrightness--;
-      // uint8_t scaledBrightness = calculatePowerScaledBrightness(g_fadeCurrentBrightness);
+      Serial.printf("%s: Fading out - New Curr:%d\n", SGN, g_fadeCurrentBrightness);
       FastLED.setBrightness(g_fadeCurrentBrightness);
       FastLED.show();
     }
     else
     {
-      // Fade out complete
-      Serial.printf("%s: %s: Fade out complete\n", timeToString().c_str(), SGN);
-      _taskFade.disable();
+      Serial.printf("%s: FadeOut done. Curr:%d Target:%d\n",
+                    SGN, g_fadeCurrentBrightness, g_fadeTargetBrightness);
 
-      // Change pattern here
+      // _taskFade.disable();
+      g_fadeState = FADE_NONE;
       gCurrentPatternNumber = (gCurrentPatternNumber + 1) % NUM_PATTERNS;
       g_patternInitNeeded = 1;
       printPatternAndPalette();
-
-      // Start fade in
-      startFadeIn();
+      // startFadeIn();
     }
   }
   else if (g_fadeState == FADING_IN)
   {
+    Serial.printf("g_fadeState == FADING_IN");
     if (g_fadeCurrentBrightness < g_fadeTargetBrightness)
     {
       g_fadeCurrentBrightness++;
+      Serial.printf("%s: Fading in - New Curr:%d\n", SGN, g_fadeCurrentBrightness);
       FastLED.setBrightness(g_fadeCurrentBrightness);
       FastLED.show();
     }
     else
     {
-      // Fade in complete
-      Serial.printf("%s: %s: Fade in complete\n", timeToString().c_str(), SGN);
-      _taskFade.disable();
+      Serial.printf("%s: FadeIn complete at: %d\n", SGN, g_fadeCurrentBrightness);
+      // _taskFade.disable();
       g_fadeState = FADE_NONE;
-
-      // Re-enable tasks
       _taskChangeToBrightness.enable();
     }
+  }
+  // SHould not reach here but just in case
+  else if (g_fadeState == FADE_NONE)
+  {
+    Serial.printf("g_fadeState == FADE_NONE\n");
+
+    _taskChangeToBrightness.enable();
+    _taskFade.disable();
   }
 }
 
@@ -221,30 +251,29 @@ void startFadeOut()
   Serial.printf("%s: %s: Starting\n", timeToString().c_str(), SGN);
 
   g_fadeState = FADING_OUT;
-  g_fadeStartBrightness = g_currentBrightness;
   g_fadeTargetBrightness = 0;
-  g_fadeCurrentBrightness = g_fadeStartBrightness;
+  g_fadeCurrentBrightness = g_currentBrightness;
 
   // Disable interfering tasks
   _taskChangeToBrightness.disable();
-
   _taskFade.enable();
 }
 
 void startFadeIn()
 {
   constexpr const char *SGN = "startFadeIn()";
-  Serial.printf("%s: %s: Starting\n", timeToString().c_str(), SGN);
+  Serial.printf("%s: Starting with target: %d\n", SGN, g_currentBrightness);
   g_fadeState = FADING_IN;
-  g_fadeStartBrightness = 0;
-  g_fadeTargetBrightness = g_currentBrightness;
-  g_fadeCurrentBrightness = g_fadeStartBrightness;
-
+  g_fadeTargetBrightness = g_currentBrightness; // Use current global brightness
+  g_fadeCurrentBrightness = 0;
   _taskFade.enable();
 }
 
 boolean changeToTarget(uint8_t target, uint8_t &current)
 {
+  constexpr const char *SGN = "changeToTarget()";
+  Serial.printf("%s: Target: %d, Current: %d\n", SGN, target, current);
+
   if (target < current)
   {
     current--;
@@ -254,15 +283,15 @@ boolean changeToTarget(uint8_t target, uint8_t &current)
     current++;
   }
 
+  Serial.printf("%s: Updated Current: %d\n", SGN, current);
+
   return target == current;
 }
 
-// Generic function that can be used for other parameters too
 void changeToBrightness()
 {
-
   constexpr const char *SGN = "ChangeToBrightness()";
-  // Serial.printf("%s: %s: Adjusting Brightness: %u -> %u\n", timeToString().c_str(), SGN, g_currentBrightness, g_targetBrightness);
+  Serial.printf("%s: Before changeToTarget - g_currentBrightness: %d, g_targetBrightness: %d\n", SGN, g_currentBrightness, g_targetBrightness);
 
   if (changeToTarget(g_targetBrightness, g_currentBrightness))
   {
@@ -270,10 +299,7 @@ void changeToBrightness()
     Serial.printf("%s: %s: Brightness adjusted to %u\n", timeToString().c_str(), SGN, g_currentBrightness);
   }
 
-  // this doesn't work reliably yet
-  // uint8_t scaledBrightness = calculatePowerScaledBrightness(g_currentBrightness);
-  // Serial.printf("%s: %s: Brightness %u \tScaled: %u\n", timeToString().c_str(), SGN, g_currentBrightness, scaledBrightness);
-
+  Serial.printf("%s: After changeToTarget - g_currentBrightness: %d\n", SGN, g_currentBrightness);
   FastLED.setBrightness(g_currentBrightness);
 }
 
