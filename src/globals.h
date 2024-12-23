@@ -54,7 +54,8 @@
 
 #define ENCODER_ANIMATION_IDLE_TIMEOUT 5000
 
-typedef void (*SimplePatternList[])();
+typedef void (*PatternFunction)(CRGB *ledBuffer);
+typedef PatternFunction SimplePatternList[];
 
 // Extern declarations of global variables
 extern uint8_t g_targetBrightness;
@@ -72,6 +73,9 @@ extern uint8_t g_fadeState;
 extern CRGB leds[NUM_LEDS];
 extern const char *patternNames[];
 extern uint8_t gCurrentPaletteNumber;
+
+extern CRGB buffer1[NUM_LEDS + 1];
+extern CRGB buffer2[NUM_LEDS + 1];
 
 extern uint8_t g_fadeTargetBrightness;
 extern uint8_t g_fadeCurrentBrightness;

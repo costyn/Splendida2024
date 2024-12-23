@@ -14,38 +14,38 @@
 #include "tasks.h" // Add tasks.h include
 #include "tables.h"
 
-extern SimplePatternList gPatterns;
+typedef PatternFunction SimplePatternList[];
 
 byte rain[(NUM_COLS_PLANAR + 2) * (NUM_ROWS_PLANAR + 2)];
 
-void SoftTwinkles();
-void cylindrical_Pattern();
-void FireComets();
-void hypnoticWaves();
-void testCylinderMapping2();
-void DiagonalPattern();
-void hypnoticSpiral();
-void spiralCylinderWave();
-void PlasmaBall(); // F_lying,  // I don't like it enough.
-void RGBTunnel();
-void Flower();
-void Distortion_Waves_cylinder();
-void colorwaves();
-void Distortion_Waves_planar();
-void FireButterfly();
-void Spiral2();
-void pride();
-void RGB_Caleidoscope2();
-void RGB_Caleidoscope1();
-void Swirl();
-void RGB_hiphotic();
-void Spiral();
-void DigitalRain();
-void fire2021();
+void SoftTwinkles(CRGB *buffer);
+void cylindrical_Pattern(CRGB *buffer);
+void FireComets(CRGB *buffer);
+void hypnoticWaves(CRGB *buffer);
+void testCylinderMapping2(CRGB *buffer);
+void DiagonalPattern(CRGB *buffer);
+void hypnoticSpiral(CRGB *buffer);
+void spiralCylinderWave(CRGB *buffer);
+void PlasmaBall(CRGB *buffer);
+void RGBTunnel(CRGB *buffer);
+void Flower(CRGB *buffer);
+void Distortion_Waves_cylinder(CRGB *buffer);
+void colorwaves(CRGB *buffer);
+void Distortion_Waves_planar(CRGB *buffer);
+void FireButterfly(CRGB *buffer);
+void Spiral2(CRGB *buffer);
+void pride(CRGB *buffer);
+void RGB_Caleidoscope2(CRGB *buffer);
+void RGB_Caleidoscope1(CRGB *buffer);
+void Swirl(CRGB *buffer);
+void RGB_hiphotic(CRGB *buffer);
+void Spiral(CRGB *buffer);
+void DigitalRain(CRGB *buffer);
+void fire2021(CRGB *buffer);
 
 void balls();
 void raininit();
-void updaterain();
+void updaterain(CRGB *buffer);
 void changepattern();
 
 #endif

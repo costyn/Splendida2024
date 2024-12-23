@@ -94,9 +94,10 @@ void runPattern()
   }
 
   // Run pattern
-  gPatterns[gCurrentPatternNumber]();
+  gPatterns[gCurrentPatternNumber](leds);
   g_statusLed[0].fadeToBlackBy(1);
   FastLED.show();
+  // Pass the LED buffer to the pattern function
 }
 
 void printPatternAndPalette()
@@ -162,7 +163,7 @@ static void longPress()
 void changePattern()
 {
   Serial.printf("changePattern\n");
-  startFadeOut();
+  // startFadeOut();
 }
 
 void fade()
