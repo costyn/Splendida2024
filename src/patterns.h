@@ -3,7 +3,6 @@
 
 // A couple function prototypes
 // void changePalette();
-// Task _taskChangePalette(SECONDS_PER_PALETTE *TASK_SECOND, TASK_FOREVER, &changePalette);
 
 // system procedures_____________________________________
 

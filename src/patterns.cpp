@@ -105,7 +105,6 @@ void DigitalRain(CRGB *ledBuffer)
         raininit();
         g_patternInitNeeded = 0;
         FastLED.clear();
-        _taskChangePalette.disable();
     }
     EVERY_N_MILLISECONDS(80) { updaterain(ledBuffer); }
     EVERY_N_MILLISECONDS(15) { changepattern(); }
@@ -113,12 +112,10 @@ void DigitalRain(CRGB *ledBuffer)
 
 void DiagonalPattern(CRGB *ledBuffer)
 {
-    _taskChangePalette.enableIfNot();
     // Get rotation angle from time
     float angle = g_timeAccumulator * 0.001; // Adjust speed multiplier as needed
     float centerX = NUM_COLS_PLANAR / 2.0;
     float centerY = NUM_ROWS_PLANAR / 2.0;
-    _taskChangePalette.enableIfNot();
 
     for (byte j = 0; j < NUM_ROWS_PLANAR; j++)
     {
@@ -151,7 +148,6 @@ void DiagonalPattern(CRGB *ledBuffer)
 
 void fire2021(CRGB *ledBuffer)
 {
-    _taskChangePalette.disable();
     // we don't want to use the g_timeAccumulator here,
     // because the fire simulation doesn't look as good, when slowed or sped up.
     int a = millis();
@@ -172,8 +168,6 @@ void fire2021(CRGB *ledBuffer)
 
 void Distortion_Waves_planar(CRGB *ledBuffer)
 {
-    _taskChangePalette.enableIfNot();
-
     byte speed = 5;
     uint8_t scale = 2;
 
@@ -223,8 +217,6 @@ void Distortion_Waves_planar(CRGB *ledBuffer)
 
 void RGB_hiphotic(CRGB *ledBuffer)
 {
-    _taskChangePalette.disable();
-
     uint16_t a = (uint16_t)(g_timeAccumulator * 1.33);
     for (int x = 0; x < NUM_COLS_PLANAR; x++)
     {
@@ -243,8 +235,6 @@ void RGB_hiphotic(CRGB *ledBuffer)
 
 void mydrawLine_PB(byte x1, byte y1, CRGB *ledBuffer)
 { // draw line frim center
-    _taskChangePalette.disable();
-
     CRGB color;
     byte xsteps = abs8(NUM_COLS_PLANAR / 2 - x1) + 1;
     byte ysteps = abs8(NUM_ROWS_PLANAR / 2 - y1) + 1;
@@ -263,8 +253,6 @@ void mydrawLine_PB(byte x1, byte y1, CRGB *ledBuffer)
 
 void PlasmaBall(CRGB *ledBuffer)
 {
-    _taskChangePalette.disable();
-
     int8_t speed = (int)fmap(g_animationSpeed, MIN_ANIMATION_SPEED, MAX_ANIMATION_SPEED, 0, 10);
 
     byte x1 = beatsin8(18 + speed, 0, (NUM_COLS_PLANAR - 1));
@@ -371,7 +359,6 @@ void FireComets(CRGB *ledBuffer)
     {
         FastLED.clear();
         g_patternInitNeeded = 0;
-        _taskChangePalette.disable();
     }
     balls();
     fadecenter();
@@ -406,8 +393,6 @@ void mydrawLine_Fl(byte x, byte y, byte x1, byte y1, CRGB color, bool dot, CRGB 
 
 void F_lying(CRGB *ledBuffer)
 {
-    _taskChangePalette.disable();
-
     static byte hue = 0;
     EVERY_N_MILLISECONDS(30) { hue++; } // 30 - speed of hue change
 
@@ -445,7 +430,6 @@ byte code(int x, int y, int t)
 
 void RGBTunnel(CRGB *ledBuffer)
 {
-    _taskChangePalette.enableIfNot();
     uint16_t t = (uint16_t)g_timeAccumulator;
 
     for (byte y = 0; y < NUM_ROWS_PLANAR; y++)
@@ -468,7 +452,6 @@ void RGBTunnel(CRGB *ledBuffer)
 
 void RGB_Caleidoscope1(CRGB *ledBuffer)
 {
-    _taskChangePalette.enableIfNot();
     uint16_t a = (uint16_t)g_timeAccumulator;
 
     for (int j = 0; j < NUM_ROWS_CYLINDER; j++)
@@ -492,7 +475,6 @@ void RGB_Caleidoscope1(CRGB *ledBuffer)
 
 void RGB_Caleidoscope2(CRGB *ledBuffer)
 {
-    _taskChangePalette.enableIfNot();
     uint16_t a = (uint16_t)g_timeAccumulator;
 
     for (int j = 0; j < NUM_ROWS_CYLINDER; j++)
@@ -516,8 +498,6 @@ void RGB_Caleidoscope2(CRGB *ledBuffer)
 
 void Distortion_Waves_cylinder(CRGB *ledBuffer)
 {
-    _taskChangePalette.disable();
-
     byte speed = 5;
     uint8_t w = 2;
     uint8_t scale = 2;
@@ -576,8 +556,6 @@ void Distortion_Waves_cylinder(CRGB *ledBuffer)
 
 void FireButterfly(CRGB *ledBuffer)
 {
-    _taskChangePalette.disable();
-
     uint16_t a = (uint16_t)(g_timeAccumulator * 2.67); // 8/3 = 2.67
 
     for (int j = 0; j < NUM_ROWS_CYLINDER; j++)
@@ -631,7 +609,6 @@ void DrawOneFrameSprite(uint16_t xspeed, uint16_t yspeed, byte fract, byte *spri
 // FIXME: This animation is a bit janky
 void Swirl(CRGB *ledBuffer)
 {
-    _taskChangePalette.enableIfNot();
     uint16_t a = (uint16_t)(g_timeAccumulator * 1.14); // 8/7 = 1.14
 
     for (int j = 0; j < NUM_ROWS_CYLINDER; j++)
@@ -653,7 +630,6 @@ void Swirl(CRGB *ledBuffer)
 // Doesn't solve the issue yet, more experimentation needed
 void FloatingPointSwirl(CRGB *ledBuffer)
 {
-    _taskChangePalette.enableIfNot();
     // Use a floating-point variable for 'a'
     float a = g_timeAccumulator * 1.14f; // 8/7 = 1.14
 
@@ -686,7 +662,6 @@ void FloatingPointSwirl(CRGB *ledBuffer)
 
 void cylindrical_Pattern(CRGB *ledBuffer)
 {
-    _taskChangePalette.enableIfNot();
     uint16_t a = (uint16_t)(g_timeAccumulator * 0.333);
     float scale = (sin(a / 32 * PI / 180) * 16) + 32;
 
@@ -711,8 +686,6 @@ void cylindrical_Pattern(CRGB *ledBuffer)
 
 void Spiral(CRGB *ledBuffer)
 {
-    _taskChangePalette.enableIfNot();
-
     uint16_t a = (uint16_t)g_timeAccumulator;
     float scale = (sin(a / 32 * PI / 180) * 18) - 6;
 
@@ -741,7 +714,6 @@ void Spiral2(CRGB *ledBuffer)
         raininit();
         g_patternInitNeeded = 0;
         FastLED.clear();
-        _taskChangePalette.enableIfNot();
     }
 
     uint16_t a = (uint16_t)(g_timeAccumulator * 1.33); // 8/6 = 1.33
@@ -781,7 +753,6 @@ void Spiral2(CRGB *ledBuffer)
 
 void Flower(CRGB *ledBuffer)
 {
-    _taskChangePalette.enableIfNot();
     uint16_t a = (uint16_t)g_timeAccumulator;
 
     for (int j = 0; j < NUM_ROWS_CYLINDER; j++)
@@ -806,8 +777,6 @@ void pride(CRGB *ledBuffer)
 // Animated, ever-changing rainbows.
 // by Mark Kriegsman
 {
-    _taskChangePalette.disable();
-
     static uint16_t sPseudotime = 0;
     static uint16_t sLastMillis = 0;
     static uint16_t sHue16 = 0;
@@ -865,7 +834,6 @@ void pride(CRGB *ledBuffer)
 
 void colorwaves(CRGB *ledBuffer)
 {
-    _taskChangePalette.enableIfNot();
     static uint16_t sPseudotime = 0;
     static uint16_t sLastMillis = 0;
     static uint16_t sHue16 = 0;
@@ -930,7 +898,6 @@ void SoftTwinkles(CRGB *ledBuffer)
     {
         FastLED.clear();
         g_patternInitNeeded = 0;
-        _taskChangePalette.disable();
     }
 
     static const CRGB lightcolor(0, 4, 4);
@@ -962,8 +929,6 @@ void SoftTwinkles(CRGB *ledBuffer)
 
 void spiralCylinderWave(CRGB *ledBuffer)
 {
-    _taskChangePalette.enableIfNot();
-
     // Animation parameters
     const float waveLength = 3.0f;       // Controls the number of waves around the cylinder
     const float speedMultiplier = 0.05f; // Adjust this to control speed via g_timeAccumulator
@@ -1001,8 +966,6 @@ void spiralCylinderWave(CRGB *ledBuffer)
 
 void testCylinderMapping(CRGB *ledBuffer)
 {
-    _taskChangePalette.disable();
-
     for (uint8_t y = 0; y < NUM_ROWS_CYLINDER; y++)
     {
         for (uint8_t x = 0; x < NUM_COLS_CYLINDER; x++)
@@ -1052,7 +1015,6 @@ void testCylinderMapping2(CRGB *ledBuffer)
 
 void hypnoticSpiral(CRGB *ledBuffer)
 {
-    _taskChangePalette.enableIfNot();
     // Animation parameters
     const float speedMultiplier = 0.05; // Speed of the inward movement
     const float frequency = 0.2;        // Controls the number of waves
@@ -1100,7 +1062,6 @@ void hypnoticSpiral(CRGB *ledBuffer)
 
 void hypnoticWaves(CRGB *ledBuffer)
 {
-    _taskChangePalette.enableIfNot();
     // Animation parameters
     const float speedMultiplier = 0.025;         // Speed of the inward movement
     const float frequency = 1.0;                 // Controls the number of waves

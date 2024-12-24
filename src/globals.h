@@ -58,6 +58,12 @@
 
 #define ENCODER_ANIMATION_IDLE_TIMEOUT 5000
 
+enum RenderBuffer
+{
+    BUFFER1,
+    BUFFER2
+};
+
 typedef void (*PatternFunction)(CRGB *ledBuffer);
 typedef PatternFunction SimplePatternList[];
 
@@ -69,12 +75,11 @@ extern CRGBPalette16 gCurrentPalette;
 extern CRGBPalette16 gTargetPalette;
 extern float g_timeAccumulator;
 extern SimplePatternList gPatterns;
-extern uint8_t gCurrentPatternNumber;
-extern uint8_t gTargetPatternNumber;
+extern uint8_t gBuffer1PatternNumber;
+extern uint8_t gBuffer2PatternNumber;
 extern CRGB g_statusLed[];
 extern byte g_patternInitNeeded;
 extern uint8_t g_currentBrightness;
-extern uint8_t g_fadeState;
 extern CRGB leds[NUM_LEDS];
 extern const char *patternNames[];
 extern uint8_t gCurrentPaletteNumber;
@@ -82,17 +87,8 @@ extern uint8_t gCurrentPaletteNumber;
 extern CRGB buffer1[NUM_LEDS + 1];
 extern CRGB buffer2[NUM_LEDS + 1];
 extern uint8_t _bufferBlendAmount;
-
-extern uint8_t g_fadeTargetBrightness;
-extern uint8_t g_fadeCurrentBrightness;
+extern RenderBuffer _renderBuffer;
 
 float fmap(float x, float a, float b, float c, float d);
-
-enum FadeState
-{
-    FADE_NONE,
-    FADING_OUT,
-    FADING_IN
-};
 
 #endif
