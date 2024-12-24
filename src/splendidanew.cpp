@@ -21,14 +21,19 @@ uint8_t g_currentBrightness = 0;
 float g_animationSpeed = 0.15f;
 float g_timeAccumulator = 0.0f;
 uint8_t gCurrentPatternNumber = 0;
+uint8_t gTargetPatternNumber = 0;
 CRGB g_statusLed[1];
 byte g_patternInitNeeded = 1;
 uint8_t g_fadeState = FADE_NONE;
 CRGB leds[NUM_LEDS];
+CRGB buffer1[NUM_LEDS + 1];
+CRGB buffer2[NUM_LEDS + 1];
 uint8_t g_lastSafeIndex = 255;
 uint8_t g_fadeTargetBrightness = 0;
 uint8_t g_fadeCurrentBrightness = 0;
 CRGBPalette16 gTargetPalette = gGradientPalettes[random8(gGradientPaletteCount)]; // Choose random palette on start
+
+uint8_t _bufferBlendAmount = 0; // blending between buffers
 
 Scheduler _runner;
 Task _taskChangeToBrightness(10 * TASK_MILLISECOND, TASK_FOREVER, &changeToBrightness);
@@ -39,6 +44,7 @@ Task _taskBlendPalette(BLEND_INTERVAL_MS *TASK_MILLISECOND, TASK_FOREVER, &blend
 Task _taskFade(10 * TASK_MILLISECOND, TASK_FOREVER, &fade);
 Task _taskReadEncoders(10 * TASK_MILLISECOND, TASK_FOREVER, &readEncoders);
 Task _taskEncoderAnimation(25 * TASK_MILLISECOND, TASK_FOREVER, &updateEncoderIdleAnimation);
+Task _taskBufferBlend(round(DEFAULT_BLEND_TIME / BLEND_STEPS) * TASK_MILLISECOND, BLEND_STEPS, &bufferBlend);
 
 // Setup function
 void setup()
@@ -55,8 +61,11 @@ void setup()
   _runner.addTask(_taskChangePattern);
   _runner.addTask(_taskBlendPalette);
   _runner.addTask(_taskReadEncoders);
-  _runner.addTask(_taskFade);
+  // _runner.addTask(_taskFade);
   _runner.addTask(_taskEncoderAnimation);
+
+  _runner.addTask(_taskBufferBlend);
+  _taskBufferBlend.setOnDisable(&bufferBlendDone);
 
   _taskChangeToBrightness.enable();
   _taskRunPattern.enable();
@@ -93,11 +102,34 @@ void runPattern()
     lastUpdate = currentMillis;
   }
 
-  // Run pattern
-  gPatterns[gCurrentPatternNumber](leds);
+  if (gCurrentPatternNumber != gTargetPatternNumber)
+  {
+    _taskBufferBlend.enableIfNot();
+    gPatterns[gTargetPatternNumber](buffer2);
+  }
+
+  blend(buffer1, buffer2, leds, NUM_LEDS, _bufferBlendAmount);
+
+  gPatterns[gCurrentPatternNumber](buffer1);
   g_statusLed[0].fadeToBlackBy(1);
   FastLED.show();
   // Pass the LED buffer to the pattern function
+}
+
+void bufferBlend()
+{
+  _bufferBlendAmount = _taskBufferBlend.getRunCounter();
+  Serial.printf(".");
+}
+
+void bufferBlendDone()
+{
+  constexpr const char *SGN = "bufferBlendDone()";
+  Serial.printf("\n");
+  gCurrentPatternNumber = gTargetPatternNumber;
+  _bufferBlendAmount = 0;
+  Serial.printf("%s: %s: Blending done: %u\n", timeToString().c_str(), SGN, _bufferBlendAmount);
+  _taskBufferBlend.setIterations(BLEND_STEPS);
 }
 
 void printPatternAndPalette()
@@ -163,6 +195,8 @@ static void longPress()
 void changePattern()
 {
   Serial.printf("changePattern\n");
+  gTargetPatternNumber = (gCurrentPatternNumber + 1) % NUM_PATTERNS;
+  g_patternInitNeeded = 1;
   // startFadeOut();
 }
 

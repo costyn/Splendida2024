@@ -13,5 +13,6 @@ extern Task _taskBlendPalette;
 extern Task _taskFade;
 extern Task _taskReadEncoders;
 extern Task _taskEncoderAnimation;
+extern Task _taskBufferBlend;
 
 #endif

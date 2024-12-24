@@ -5,6 +5,7 @@
 #include <Arduino.h>
 #include <FastLED.h>
 #include <TaskSchedulerDeclarations.h>
+#define M5ATOM
 
 // Emulator
 #ifndef M5ATOM
@@ -18,7 +19,7 @@
 
 // Atom Matrix M5
 #ifdef M5ATOM
-#define DATA_PIN 26    // set your leds datapin   change to 32 for m5 atom lite
+#define DATA_PIN 33    // set your leds datapin   change to 32 for m5 atom lite
 #define ATOMLED_PIN 21 // set your leds datapin   change to 27 for m5 atom lite
 #endif
 
@@ -49,6 +50,9 @@
 #define SECONDS_PER_PATTERN 60
 #define BLEND_SPEED 16
 #define BLEND_INTERVAL_MS 40
+#define DEFAULT_BLEND_TIME 4000 // milliseconds
+#define BLEND_STEPS 255         // 255 = max (8 bit)
+#define MAX_BLEND_TIME 8000     // milliseconds
 
 #define NUM_PATTERNS 25
 
@@ -66,6 +70,7 @@ extern CRGBPalette16 gTargetPalette;
 extern float g_timeAccumulator;
 extern SimplePatternList gPatterns;
 extern uint8_t gCurrentPatternNumber;
+extern uint8_t gTargetPatternNumber;
 extern CRGB g_statusLed[];
 extern byte g_patternInitNeeded;
 extern uint8_t g_currentBrightness;
@@ -76,6 +81,7 @@ extern uint8_t gCurrentPaletteNumber;
 
 extern CRGB buffer1[NUM_LEDS + 1];
 extern CRGB buffer2[NUM_LEDS + 1];
+extern uint8_t _bufferBlendAmount;
 
 extern uint8_t g_fadeTargetBrightness;
 extern uint8_t g_fadeCurrentBrightness;
