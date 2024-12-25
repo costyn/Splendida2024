@@ -44,7 +44,7 @@ void startFadeOut();
 void startFadeIn();
 void fade();
 
-void readEncoders();
+void readEncoder();
 void encoderSetup();
 
 void updateEncoderIdleAnimation();

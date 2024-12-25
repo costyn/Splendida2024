@@ -430,7 +430,7 @@ byte code(int x, int y, int t)
 
 void RGBTunnel(CRGB *ledBuffer)
 {
-    uint16_t t = (uint16_t)g_timeAccumulator;
+    uint16_t t = (uint16_t)(g_timeAccumulator * 0.8);
 
     for (byte y = 0; y < NUM_ROWS_PLANAR; y++)
     {
@@ -447,7 +447,7 @@ void RGBTunnel(CRGB *ledBuffer)
 }
 
 //_________________________ cylindrical map patterns
-
+// TODO: Too dark!
 // RGB_Caleidoscope1_____________________________________
 
 void RGB_Caleidoscope1(CRGB *ledBuffer)
@@ -609,7 +609,7 @@ void DrawOneFrameSprite(uint16_t xspeed, uint16_t yspeed, byte fract, byte *spri
 // FIXME: This animation is a bit janky
 void Swirl(CRGB *ledBuffer)
 {
-    uint16_t a = (uint16_t)(g_timeAccumulator * 1.14); // 8/7 = 1.14
+    uint16_t a = millis() / 7;
 
     for (int j = 0; j < NUM_ROWS_CYLINDER; j++)
     {
@@ -662,7 +662,7 @@ void FloatingPointSwirl(CRGB *ledBuffer)
 
 void cylindrical_Pattern(CRGB *ledBuffer)
 {
-    uint16_t a = (uint16_t)(g_timeAccumulator * 0.333);
+    uint16_t a = (uint16_t)(g_timeAccumulator * 0.5);
     float scale = (sin(a / 32 * PI / 180) * 16) + 32;
 
     float scale1 = 0;
@@ -931,7 +931,7 @@ void spiralCylinderWave(CRGB *ledBuffer)
 {
     // Animation parameters
     const float waveLength = 3.0f;       // Controls the number of waves around the cylinder
-    const float speedMultiplier = 0.05f; // Adjust this to control speed via g_timeAccumulator
+    const float speedMultiplier = 0.03f; // Adjust this to control speed via g_timeAccumulator
 
     // Loop through cylinder coordinates
     for (uint8_t x = 0; x < NUM_COLS_CYLINDER; x++)
@@ -1008,12 +1008,13 @@ void testCylinderMapping2(CRGB *ledBuffer)
                               0, 255);
 
             // Set LED color using HSV hue
-            ledBuffer[index] = CHSV(hue, 255, 255);
+            ledBuffer[index] = CHSV(hue, 255, 255); // 255 brightness is too much, 128 too little
         }
     }
+    GammaCorrection(ledBuffer);
 }
 
-void hypnoticSpiral(CRGB *ledBuffer)
+void hypnoticWings(CRGB *ledBuffer)
 {
     // Animation parameters
     const float speedMultiplier = 0.05; // Speed of the inward movement
@@ -1186,9 +1187,9 @@ SimplePatternList gPatterns = // this is list of patterns
         hypnoticWaves,
         testCylinderMapping2,
         DiagonalPattern,
-        hypnoticSpiral,
+        hypnoticWings,
         spiralCylinderWave,
-        PlasmaBall,
+        // PlasmaBall,
         // F_lying,  // I don't like it enough.
         RGBTunnel,
         Flower,
@@ -1214,9 +1215,9 @@ const char *patternNames[] = {
     "hypnoticWaves",
     "testCylinderMapping2",
     "DiagonalPattern",
-    "hypnoticSpiral",
+    "hypnoticWings",
     "spiralCylinderWave",
-    "PlasmaBall",
+    // "PlasmaBall",
     // "F_lying",
     "RGBTunnel",
     "Flower",

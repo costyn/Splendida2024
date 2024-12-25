@@ -44,6 +44,7 @@
 
 #define MAX_ANIMATION_SPEED 0.4f
 #define MIN_ANIMATION_SPEED -0.4f
+#define DEFAULT_ANIMATION_SPEED 0.10f
 
 // Animation Constants
 #define SECONDS_PER_PALETTE 20

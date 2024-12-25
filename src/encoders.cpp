@@ -46,7 +46,7 @@ void encoderSetup()
     RGBEncoder.writeStep((int32_t)ENCODER_STEP);
 }
 
-void readEncoders()
+void readEncoder()
 {
     if (digitalRead(I2C_INT_PIN) == LOW)
     {
@@ -90,7 +90,6 @@ void encoder_onChange(i2cEncoderLibV2 *obj)
         {
             g_targetBrightness = max(MIN_BRIGHTNESS, g_targetBrightness - step);
         }
-        Serial.printf("%s: Brightness target: %d\n", SGN, g_targetBrightness);
         _taskChangeToBrightness.enableIfNot();
         break;
 

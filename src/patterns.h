@@ -23,7 +23,7 @@ void FireComets(CRGB *buffer);
 void hypnoticWaves(CRGB *buffer);
 void testCylinderMapping2(CRGB *buffer);
 void DiagonalPattern(CRGB *buffer);
-void hypnoticSpiral(CRGB *buffer);
+void hypnoticWings(CRGB *buffer);
 void spiralCylinderWave(CRGB *buffer);
 void PlasmaBall(CRGB *buffer);
 void RGBTunnel(CRGB *buffer);

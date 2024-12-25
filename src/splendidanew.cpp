@@ -18,7 +18,7 @@
 
 uint8_t g_targetBrightness = DEFAULT_BRIGHTNESS;
 uint8_t g_currentBrightness = 0;
-float g_animationSpeed = 0.15f;
+float g_animationSpeed = DEFAULT_ANIMATION_SPEED;
 float g_timeAccumulator = 0.0f;
 uint8_t gBuffer1PatternNumber = 0;
 uint8_t gBuffer2PatternNumber = 0;
@@ -34,14 +34,22 @@ RenderBuffer _renderBuffer = BUFFER1;
 uint8_t _bufferBlendAmount = 0; // blending between buffers
 
 Scheduler _runner;
+// This task smoothly changes the brightness to the target brightness
 Task _taskChangeToBrightness(10 * TASK_MILLISECOND, TASK_FOREVER, &changeToBrightness);
+// Calls the pattern rendering functions
 Task _taskRunPattern(1 * TASK_MILLISECOND, TASK_FOREVER, &runPattern);
-Task _taskChangePalette(SECONDS_PER_PALETTE *TASK_SECOND, TASK_FOREVER, &changePalette);
-Task _taskChangePattern(SECONDS_PER_PATTERN *TASK_SECOND, TASK_FOREVER, &changePattern);
-Task _taskBlendPalette(BLEND_INTERVAL_MS *TASK_MILLISECOND, TASK_FOREVER, &blendPalette);
-Task _taskReadEncoders(10 * TASK_MILLISECOND, TASK_FOREVER, &readEncoders);
-Task _taskEncoderAnimation(25 * TASK_MILLISECOND, TASK_FOREVER, &updateEncoderIdleAnimation);
+// Blends the two animation buffers to crossfade between patterns
 Task _taskBufferBlend(round(DEFAULT_BLEND_TIME / BLEND_STEPS) * TASK_MILLISECOND, BLEND_STEPS, &bufferBlend);
+// Changes the palette every SECONDS_PER_PALETTE seconds
+Task _taskChangePalette(SECONDS_PER_PALETTE *TASK_SECOND, TASK_FOREVER, &changePalette);
+// Smoothly blends during palette changes
+Task _taskBlendPalette(BLEND_INTERVAL_MS *TASK_MILLISECOND, TASK_FOREVER, &blendPalette);
+// Initiates patttern change every SECONDS_PER_PATTERN seconds
+Task _taskChangePattern(SECONDS_PER_PATTERN *TASK_SECOND, TASK_FOREVER, &changePattern);
+// Reads the rotary encoder
+Task _taskReadEncoder(10 * TASK_MILLISECOND, TASK_FOREVER, &readEncoder);
+// Animates the encoder LED, when the encoder is idle (not being turned)
+Task _taskEncoderAnimation(25 * TASK_MILLISECOND, TASK_FOREVER, &updateEncoderIdleAnimation);
 
 // Setup function
 void setup()
@@ -57,7 +65,7 @@ void setup()
   _runner.addTask(_taskChangePalette);
   _runner.addTask(_taskChangePattern);
   _runner.addTask(_taskBlendPalette);
-  _runner.addTask(_taskReadEncoders);
+  _runner.addTask(_taskReadEncoder);
   _runner.addTask(_taskEncoderAnimation);
 
   _runner.addTask(_taskBufferBlend);
@@ -66,9 +74,9 @@ void setup()
   _taskChangeToBrightness.enable();
   _taskRunPattern.enable();
   _taskChangePalette.enable();
-  _taskChangePattern.enable();
+  _taskChangePattern.enableDelayed(SECONDS_PER_PATTERN * TASK_SECOND); // Don't do this immediately
   _taskBlendPalette.enable();
-  _taskReadEncoders.enable();
+  _taskReadEncoder.enable();
   _taskEncoderAnimation.enable();
 
   // Seed random number generator with noise from analog pin
@@ -124,10 +132,12 @@ void bufferBlend()
 
 void bufferBlendDone()
 {
+  g_patternInitNeeded = 1;
   constexpr const char *SGN = "bufferBlendDone()";
   Serial.printf("\n");
   _renderBuffer == BUFFER1 ? _renderBuffer = BUFFER2 : _renderBuffer = BUFFER1;
-  Serial.printf("%s: %s: Blending done: %u\n", timeToString().c_str(), SGN, _bufferBlendAmount);
+  String buffer = _renderBuffer == BUFFER1 ? "1" : "2";
+  Serial.printf("%s: %s: Done. Rendering to buffer %s\n", timeToString().c_str(), SGN, buffer);
   printPatternAndPalette();
   _taskBufferBlend.setIterations(BLEND_STEPS);
 }
@@ -135,7 +145,9 @@ void bufferBlendDone()
 // Usage example in pattern transition:
 void changePattern()
 {
-  Serial.printf("changePattern\n");
+  constexpr const char *SGN = "changePattern()";
+
+  Serial.printf("%s: %s: Crossfading", timeToString().c_str(), SGN);
   if (_renderBuffer == BUFFER1)
   {
     gBuffer2PatternNumber = (gBuffer1PatternNumber + 1) % NUM_PATTERNS;
@@ -145,7 +157,6 @@ void changePattern()
     gBuffer1PatternNumber = (gBuffer2PatternNumber + 1) % NUM_PATTERNS;
   }
   _taskBufferBlend.enableIfNot();
-  g_patternInitNeeded = 1;
 }
 
 void printPatternAndPalette()
@@ -193,7 +204,7 @@ void blendPalette()
   nblendPaletteTowardPalette(gCurrentPalette, gTargetPalette, BLEND_SPEED);
 }
 
-// TODO
+// TODO: automode off and on
 static void oneClick()
 {
   constexpr const char *SGN = "oneClick()";
@@ -216,9 +227,6 @@ static void longPress()
 
 boolean changeToTarget(uint8_t target, uint8_t &current)
 {
-  constexpr const char *SGN = "changeToTarget()";
-  Serial.printf("%s: Target: %d, Current: %d\n", SGN, target, current);
-
   if (target < current)
   {
     current--;
@@ -227,24 +235,17 @@ boolean changeToTarget(uint8_t target, uint8_t &current)
   {
     current++;
   }
-
-  Serial.printf("%s: Updated Current: %d\n", SGN, current);
-
   return target == current;
 }
 
 void changeToBrightness()
 {
   constexpr const char *SGN = "ChangeToBrightness()";
-  Serial.printf("%s: Before changeToTarget - g_currentBrightness: %d, g_targetBrightness: %d\n", SGN, g_currentBrightness, g_targetBrightness);
-
   if (changeToTarget(g_targetBrightness, g_currentBrightness))
   {
     _taskChangeToBrightness.disable();
     Serial.printf("%s: %s: Brightness adjusted to %u\n", timeToString().c_str(), SGN, g_currentBrightness);
   }
-
-  Serial.printf("%s: After changeToTarget - g_currentBrightness: %d\n", SGN, g_currentBrightness);
   FastLED.setBrightness(g_currentBrightness);
 }
 

@@ -11,7 +11,7 @@ extern Task _taskChangePalette;
 extern Task _taskChangePattern;
 extern Task _taskBlendPalette;
 extern Task _taskFade;
-extern Task _taskReadEncoders;
+extern Task _taskReadEncoder;
 extern Task _taskEncoderAnimation;
 extern Task _taskBufferBlend;
 
