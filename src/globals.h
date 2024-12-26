@@ -5,6 +5,7 @@
 #include <Arduino.h>
 #include <FastLED.h>
 #include <TaskSchedulerDeclarations.h>
+#define M5ATOM
 
 // Emulator
 #ifndef M5ATOM
@@ -18,7 +19,7 @@
 
 // Atom Matrix M5
 #ifdef M5ATOM
-#define DATA_PIN 26    // set your leds datapin   change to 32 for m5 atom lite
+#define DATA_PIN 33    // set your leds datapin   change to 32 for m5 atom lite
 #define ATOMLED_PIN 21 // set your leds datapin   change to 27 for m5 atom lite
 #endif
 
@@ -29,7 +30,7 @@
 #define MIN_BRIGHTNESS 1        // min brightness of leds
 #define MAX_BRIGHTNESS 100      // max brightness of leds - will be limited by max power
 #define BRIGHNESS_STEP 3        // brightness step
-#define DEFAULT_BRIGHTNESS 60   // default brightness
+#define DEFAULT_BRIGHTNESS 50   // default brightness
 
 #define NUM_COLS_PLANAR 20 // resolution of planar lookup table
 #define NUM_ROWS_PLANAR 20 // resolution of planar lookup table
@@ -43,45 +44,51 @@
 
 #define MAX_ANIMATION_SPEED 0.4f
 #define MIN_ANIMATION_SPEED -0.4f
+#define DEFAULT_ANIMATION_SPEED 0.08f
 
 // Animation Constants
-#define SECONDS_PER_PALETTE 20
-#define SECONDS_PER_PATTERN 60
+#define SECONDS_PER_PALETTE 19
+#define SECONDS_PER_PATTERN 53
 #define BLEND_SPEED 16
 #define BLEND_INTERVAL_MS 40
+#define CROSSFADE_TIME 4000 // milliseconds
+#define CROSSFADE_STEPS 255 // 255 = max (8 bit)
 
-#define NUM_PATTERNS 25
+#define ENCODER_ANIMATION_IDLE_TIMEOUT 5000
 
-typedef void (*SimplePatternList[])();
+enum RenderBuffer
+{
+    BUFFER1,
+    BUFFER2
+};
+
+typedef void (*PatternFunction)(CRGB *ledBuffer);
+typedef PatternFunction SimplePatternList[];
 
 // Extern declarations of global variables
 extern uint8_t g_targetBrightness;
-extern uint8_t g_lastSafeIndex;
+extern uint16_t g_lastSafeIndex;
 extern float g_animationSpeed;
 extern CRGBPalette16 gCurrentPalette;
 extern CRGBPalette16 gTargetPalette;
 extern float g_timeAccumulator;
 extern SimplePatternList gPatterns;
-extern uint8_t gCurrentPatternNumber;
+extern const char *patternNames[];
+extern const uint8_t gPatternCount;
+extern uint8_t gBuffer1PatternNumber;
+extern uint8_t gBuffer2PatternNumber;
 extern CRGB g_statusLed[];
 extern byte g_patternInitNeeded;
 extern uint8_t g_currentBrightness;
-extern uint8_t g_fadeState;
 extern CRGB leds[NUM_LEDS];
 extern const char *patternNames[];
 extern uint8_t gCurrentPaletteNumber;
 
-extern uint8_t g_fadeStartBrightness;
-extern uint8_t g_fadeTargetBrightness;
-extern uint8_t g_fadeCurrentBrightness;
+extern CRGB buffer1[NUM_LEDS + 1];
+extern CRGB buffer2[NUM_LEDS + 1];
+extern uint8_t _bufferBlendAmount;
+extern RenderBuffer _renderBuffer;
 
 float fmap(float x, float a, float b, float c, float d);
-
-enum FadeState
-{
-    FADE_NONE,
-    FADING_OUT,
-    FADING_IN
-};
 
 #endif

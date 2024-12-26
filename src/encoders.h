@@ -8,13 +8,6 @@
 
 typedef enum
 {
-    ROTATE,
-    LIMIT,
-    CLICK
-} EncoderEvent;
-
-typedef enum
-{
     BRIGHTNESS,
     SPEED,
     ROTATION,
@@ -35,16 +28,18 @@ typedef enum
 extern EncoderState g_encoderState;
 extern uint8_t g_targetBrightness;
 extern float g_animationSpeed;
-extern Task _taskChangeToBrightness; // Declare the external task
+extern Task _taskChangeToBrightness;
+extern Task _taskEncoderAnimation;
+extern CRGBPalette16 gCurrentPalette;
 
 // Function Prototypes
 void encoder_onChange(i2cEncoderLibV2 *obj);
 void encoder_onClick(i2cEncoderLibV2 *obj);
 void encoder_onFadeEnd(i2cEncoderLibV2 *obj);
 void encoder_doubleClick(i2cEncoderLibV2 *obj);
-void encoderColorFeedback(i2cEncoderLibV2 *obj, EncoderEvent event);
 
 void setEncoderState(i2cEncoderLibV2 *obj, EncoderState state);
+void setEncoderColor(i2cEncoderLibV2 *obj, EncoderState state);
 
 void changePattern();
 std::string timeToString();

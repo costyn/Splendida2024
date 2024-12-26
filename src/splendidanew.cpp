@@ -18,27 +18,38 @@
 
 uint8_t g_targetBrightness = DEFAULT_BRIGHTNESS;
 uint8_t g_currentBrightness = 0;
-float g_animationSpeed = 0.15f;
+float g_animationSpeed = DEFAULT_ANIMATION_SPEED;
 float g_timeAccumulator = 0.0f;
-uint8_t gCurrentPatternNumber = 0;
+uint8_t gBuffer1PatternNumber = 0;
+uint8_t gBuffer2PatternNumber = 0;
 CRGB g_statusLed[1];
 byte g_patternInitNeeded = 1;
-uint8_t g_fadeState = FADE_NONE;
 CRGB leds[NUM_LEDS];
-uint8_t g_lastSafeIndex = 255;
-uint8_t g_fadeStartBrightness = 0;
-uint8_t g_fadeTargetBrightness = 0;
-uint8_t g_fadeCurrentBrightness = 0;
+CRGB buffer1[NUM_LEDS + 1];
+CRGB buffer2[NUM_LEDS + 1];
+uint16_t g_lastSafeIndex = 256;
 CRGBPalette16 gTargetPalette = gGradientPalettes[random8(gGradientPaletteCount)]; // Choose random palette on start
+RenderBuffer _renderBuffer = BUFFER1;
+
+uint8_t _bufferBlendAmount = 0; // blending between buffers
 
 Scheduler _runner;
+// This task smoothly changes the brightness to the target brightness
 Task _taskChangeToBrightness(10 * TASK_MILLISECOND, TASK_FOREVER, &changeToBrightness);
+// Calls the pattern rendering functions
 Task _taskRunPattern(1 * TASK_MILLISECOND, TASK_FOREVER, &runPattern);
+// Blends the two animation buffers to crossfade between patterns
+Task _taskBufferCrossfade(round(CROSSFADE_TIME / CROSSFADE_STEPS) * TASK_MILLISECOND, CROSSFADE_STEPS, &bufferCrossfade);
+// Changes the palette every SECONDS_PER_PALETTE seconds
 Task _taskChangePalette(SECONDS_PER_PALETTE *TASK_SECOND, TASK_FOREVER, &changePalette);
-Task _taskChangePattern(SECONDS_PER_PATTERN *TASK_SECOND, TASK_FOREVER, &changePattern);
+// Smoothly blends during palette changes
 Task _taskBlendPalette(BLEND_INTERVAL_MS *TASK_MILLISECOND, TASK_FOREVER, &blendPalette);
-Task _taskFade(10 * TASK_MILLISECOND, TASK_FOREVER, &fade);
-Task _taskReadEncoders(10 * TASK_MILLISECOND, TASK_FOREVER, &readEncoders);
+// Initiates patttern change every SECONDS_PER_PATTERN seconds
+Task _taskChangePattern(SECONDS_PER_PATTERN *TASK_SECOND, TASK_FOREVER, &changePattern);
+// Reads the rotary encoder
+Task _taskReadEncoder(10 * TASK_MILLISECOND, TASK_FOREVER, &readEncoder);
+// Animates the encoder LED, when the encoder is idle (not being turned)
+Task _taskEncoderAnimation(25 * TASK_MILLISECOND, TASK_FOREVER, &updateEncoderIdleAnimation);
 
 // Setup function
 void setup()
@@ -54,15 +65,19 @@ void setup()
   _runner.addTask(_taskChangePalette);
   _runner.addTask(_taskChangePattern);
   _runner.addTask(_taskBlendPalette);
-  _runner.addTask(_taskReadEncoders);
-  _runner.addTask(_taskFade);
+  _runner.addTask(_taskReadEncoder);
+  _runner.addTask(_taskEncoderAnimation);
+
+  _runner.addTask(_taskBufferCrossfade);
+  _taskBufferCrossfade.setOnDisable(&bufferBlendDone);
 
   _taskChangeToBrightness.enable();
   _taskRunPattern.enable();
   _taskChangePalette.enable();
-  _taskChangePattern.enable();
+  _taskChangePattern.enableDelayed(SECONDS_PER_PATTERN * TASK_SECOND); // Don't do this immediately
   _taskBlendPalette.enable();
-  _taskReadEncoders.enable();
+  _taskReadEncoder.enable();
+  _taskEncoderAnimation.enable();
 
   // Seed random number generator with noise from analog pin
   randomSeed(analogRead(32));
@@ -90,17 +105,73 @@ void runPattern()
     g_timeAccumulator += (float)(currentMillis - lastUpdate) * g_animationSpeed;
     lastUpdate = currentMillis;
   }
+  // Yes, it's a bit inefficient to render both buffers all the time,
+  // when most of the time only one is showing, but it's not a big deal
+  gPatterns[gBuffer1PatternNumber](buffer1);
+  gPatterns[gBuffer2PatternNumber](buffer2);
 
-  // Run pattern
-  gPatterns[gCurrentPatternNumber]();
+  blend(buffer1, buffer2, leds, NUM_LEDS, _bufferBlendAmount);
+
   g_statusLed[0].fadeToBlackBy(1);
   FastLED.show();
+  // Pass the LED buffer to the pattern function
+}
+
+void bufferCrossfade()
+{
+  if (_renderBuffer == BUFFER1)
+  {
+    _bufferBlendAmount = _taskBufferCrossfade.getRunCounter();
+  }
+  else
+  {
+    _bufferBlendAmount = CROSSFADE_STEPS - _taskBufferCrossfade.getRunCounter();
+  }
+  Serial.print(".");
+}
+
+void bufferBlendDone()
+{
+  constexpr const char *SGN = "bufferBlendDone()";
+
+  g_patternInitNeeded = 1;
+  _renderBuffer == BUFFER1 ? _renderBuffer = BUFFER2 : _renderBuffer = BUFFER1;
+  _taskBufferCrossfade.setIterations(CROSSFADE_STEPS);
+
+  Serial.println("Done");
+  String buffer = _renderBuffer == BUFFER1 ? "1" : "2";
+  Serial.printf("%s: %s: Rendering to buffer %s\n", timeToString().c_str(), SGN, buffer);
+  printPatternAndPalette();
+}
+
+// Usage example in pattern transition:
+void changePattern()
+{
+  constexpr const char *SGN = "changePattern()";
+
+  Serial.printf("%s: %s: Crossfading", timeToString().c_str(), SGN);
+  if (_renderBuffer == BUFFER1)
+  {
+    gBuffer2PatternNumber = (gBuffer1PatternNumber + 1) % gPatternCount;
+  }
+  else
+  {
+    gBuffer1PatternNumber = (gBuffer2PatternNumber + 1) % gPatternCount;
+  }
+  _taskBufferCrossfade.enableIfNot();
 }
 
 void printPatternAndPalette()
 {
   constexpr const char *SGN = "printPatternAndPalette()";
-  Serial.printf("%s: %s: Pattern: %s \tPalette: %s\n", timeToString().c_str(), SGN, patternNames[gCurrentPatternNumber], paletteNames[gCurrentPaletteNumber]);
+  if (_renderBuffer == BUFFER1)
+  {
+    Serial.printf("%s: %s: Pattern: %s \tPalette: %s\n", timeToString().c_str(), SGN, patternNames[gBuffer1PatternNumber], paletteNames[gCurrentPaletteNumber]);
+  }
+  else
+  {
+    Serial.printf("%s: %s: Pattern: %s \tPalette: %s\n", timeToString().c_str(), SGN, patternNames[gBuffer2PatternNumber], paletteNames[gCurrentPaletteNumber]);
+  }
 }
 
 // Initialize Serial Communication
@@ -135,7 +206,7 @@ void blendPalette()
   nblendPaletteTowardPalette(gCurrentPalette, gTargetPalette, BLEND_SPEED);
 }
 
-// TODO
+// TODO: automode off and on
 static void oneClick()
 {
   constexpr const char *SGN = "oneClick()";
@@ -156,89 +227,6 @@ static void longPress()
   g_statusLed[0].setHue(100);
 }
 
-// Usage example in pattern transition:
-void changePattern()
-{
-  startFadeOut();
-}
-
-void fade()
-{
-  constexpr const char *SGN = "fade()";
-
-  if (g_fadeState == FADING_OUT)
-  {
-    if (g_fadeCurrentBrightness > g_fadeTargetBrightness)
-    {
-      g_fadeCurrentBrightness--;
-      // uint8_t scaledBrightness = calculatePowerScaledBrightness(g_fadeCurrentBrightness);
-      FastLED.setBrightness(g_fadeCurrentBrightness);
-      FastLED.show();
-    }
-    else
-    {
-      // Fade out complete
-      Serial.printf("%s: %s: Fade out complete\n", timeToString().c_str(), SGN);
-      _taskFade.disable();
-
-      // Change pattern here
-      gCurrentPatternNumber = (gCurrentPatternNumber + 1) % NUM_PATTERNS;
-      g_patternInitNeeded = 1;
-      printPatternAndPalette();
-
-      // Start fade in
-      startFadeIn();
-    }
-  }
-  else if (g_fadeState == FADING_IN)
-  {
-    if (g_fadeCurrentBrightness < g_fadeTargetBrightness)
-    {
-      g_fadeCurrentBrightness++;
-      FastLED.setBrightness(g_fadeCurrentBrightness);
-      FastLED.show();
-    }
-    else
-    {
-      // Fade in complete
-      Serial.printf("%s: %s: Fade in complete\n", timeToString().c_str(), SGN);
-      _taskFade.disable();
-      g_fadeState = FADE_NONE;
-
-      // Re-enable tasks
-      _taskChangeToBrightness.enable();
-    }
-  }
-}
-
-void startFadeOut()
-{
-  constexpr const char *SGN = "startFadeOut()";
-  Serial.printf("%s: %s: Starting\n", timeToString().c_str(), SGN);
-
-  g_fadeState = FADING_OUT;
-  g_fadeStartBrightness = g_currentBrightness;
-  g_fadeTargetBrightness = 0;
-  g_fadeCurrentBrightness = g_fadeStartBrightness;
-
-  // Disable interfering tasks
-  _taskChangeToBrightness.disable();
-
-  _taskFade.enable();
-}
-
-void startFadeIn()
-{
-  constexpr const char *SGN = "startFadeIn()";
-  Serial.printf("%s: %s: Starting\n", timeToString().c_str(), SGN);
-  g_fadeState = FADING_IN;
-  g_fadeStartBrightness = 0;
-  g_fadeTargetBrightness = g_currentBrightness;
-  g_fadeCurrentBrightness = g_fadeStartBrightness;
-
-  _taskFade.enable();
-}
-
 boolean changeToTarget(uint8_t target, uint8_t &current)
 {
   if (target < current)
@@ -249,27 +237,17 @@ boolean changeToTarget(uint8_t target, uint8_t &current)
   {
     current++;
   }
-
   return target == current;
 }
 
-// Generic function that can be used for other parameters too
 void changeToBrightness()
 {
-
   constexpr const char *SGN = "ChangeToBrightness()";
-  // Serial.printf("%s: %s: Adjusting Brightness: %u -> %u\n", timeToString().c_str(), SGN, g_currentBrightness, g_targetBrightness);
-
   if (changeToTarget(g_targetBrightness, g_currentBrightness))
   {
     _taskChangeToBrightness.disable();
     Serial.printf("%s: %s: Brightness adjusted to %u\n", timeToString().c_str(), SGN, g_currentBrightness);
   }
-
-  // this doesn't work reliably yet
-  // uint8_t scaledBrightness = calculatePowerScaledBrightness(g_currentBrightness);
-  // Serial.printf("%s: %s: Brightness %u \tScaled: %u\n", timeToString().c_str(), SGN, g_currentBrightness, scaledBrightness);
-
   FastLED.setBrightness(g_currentBrightness);
 }
 

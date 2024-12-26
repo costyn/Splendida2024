@@ -145,7 +145,6 @@ const TProgmemRGBGradientPaletteRef gGradientPalettes[] = {
     Blue_Cyan_Yellow_gp,         // 43-30 Yelblu
     Orange_Teal_gp,              // 44-31 Orange & Teal
     Tiamat_gp,                   // 45-32 Tiamat
-    April_Night_gp,              // 46-33 April Night
     Orangery_gp,                 // 47-34 Orangery
     C9_gp,                       // 48-35 C9
     Sakura_gp,                   // 49-36 Sakura
@@ -214,7 +213,6 @@ const char *paletteNames[] = {
     "Yelblu",
     "Orange & Teal",
     "Tiamat",
-    "April Night",
     "Orangery",
     "C9",
     "Sakura",

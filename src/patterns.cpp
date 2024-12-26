@@ -12,17 +12,17 @@ uint16_t XY_CYLINDER(byte x, byte y)
     return (ledsindex);
 }
 
-void GammaCorrection()
+void GammaCorrection(CRGB *ledBuffer)
 { // gamma correction function
     byte r, g, b;
     for (uint16_t i = 0; i < NUM_LEDS; i++)
     {
-        r = leds[i].r;
-        g = leds[i].g;
-        b = leds[i].b;
-        leds[i].r = pgm_read_byte(exp_gamma + r);
-        leds[i].g = pgm_read_byte(exp_gamma + g);
-        leds[i].b = pgm_read_byte(exp_gamma + b);
+        r = ledBuffer[i].r;
+        g = ledBuffer[i].g;
+        b = ledBuffer[i].b;
+        ledBuffer[i].r = pgm_read_byte(exp_gamma + r);
+        ledBuffer[i].g = pgm_read_byte(exp_gamma + g);
+        ledBuffer[i].b = pgm_read_byte(exp_gamma + b);
     }
 }
 
@@ -79,7 +79,7 @@ void raininit()
         rain[random16(NUM_LEDS_PLANAR)] = 1;
 } // raininit
 
-void updaterain()
+void updaterain(CRGB *ledBuffer)
 {
     static int speed = 1;
 
@@ -90,7 +90,7 @@ void updaterain()
         {
             byte layer = rain[yindex + i];
             if (layer)
-                leds[XY_fibon_PLANAR((NUM_COLS_PLANAR - 1) - i, (NUM_ROWS_PLANAR - 1) - j)].setHue(100);
+                ledBuffer[XY_fibon_PLANAR((NUM_COLS_PLANAR - 1) - i, (NUM_ROWS_PLANAR - 1) - j)].setHue(100);
         }
     }
 
@@ -98,27 +98,24 @@ void updaterain()
     speed++;
 } // updaterain
 
-void DigitalRain()
+void DigitalRain(CRGB *ledBuffer)
 {
     if (g_patternInitNeeded)
     {
         raininit();
         g_patternInitNeeded = 0;
         FastLED.clear();
-        _taskChangePalette.disable();
     }
-    EVERY_N_MILLISECONDS(80) { updaterain(); }
+    EVERY_N_MILLISECONDS(80) { updaterain(ledBuffer); }
     EVERY_N_MILLISECONDS(15) { changepattern(); }
 }
 
-void DiagonalPattern()
+void DiagonalPattern(CRGB *ledBuffer)
 {
-    _taskChangePalette.enableIfNot();
     // Get rotation angle from time
     float angle = g_timeAccumulator * 0.001; // Adjust speed multiplier as needed
     float centerX = NUM_COLS_PLANAR / 2.0;
     float centerY = NUM_ROWS_PLANAR / 2.0;
-    _taskChangePalette.enableIfNot();
 
     for (byte j = 0; j < NUM_ROWS_PLANAR; j++)
     {
@@ -142,16 +139,15 @@ void DiagonalPattern()
             // Use rotated coordinates for color calculation
             CRGB newcolor = ColorFromPalette(gCurrentPalette,
                                              ((uint8_t)rotX << 3) + ((uint8_t)rotY << 3) + (int)g_timeAccumulator, 255);
-            leds[ledsindex] = newcolor;
+            ledBuffer[ledsindex] = newcolor;
         }
     }
 }
 
 // fire2021_____________________________________
 
-void fire2021()
+void fire2021(CRGB *ledBuffer)
 {
-    _taskChangePalette.disable();
     // we don't want to use the g_timeAccumulator here,
     // because the fire simulation doesn't look as good, when slowed or sped up.
     int a = millis();
@@ -162,18 +158,16 @@ void fire2021()
         {
             int ledsindex = XY_fibon_PLANAR(i, j);
             if (ledsindex != g_lastSafeIndex)
-                leds[ledsindex] = HeatColor(qsub8(inoise8(i * 90, j * 90 + a, a1),
-                                                  abs8(j - (NUM_ROWS_PLANAR - 1)) * 255 / (NUM_ROWS_PLANAR + 4)));
+                ledBuffer[ledsindex] = HeatColor(qsub8(inoise8(i * 90, j * 90 + a, a1),
+                                                       abs8(j - (NUM_ROWS_PLANAR - 1)) * 255 / (NUM_ROWS_PLANAR + 4)));
         }
     }
 }
 
 // Distortion_Waves_plan_____________________________________
 
-void Distortion_Waves_planar()
+void Distortion_Waves_planar(CRGB *ledBuffer)
 {
-    _taskChangePalette.enableIfNot();
-
     byte speed = 5;
     uint8_t scale = 2;
 
@@ -213,38 +207,34 @@ void Distortion_Waves_planar()
             valueB = cos_wave[valueB];
 
             CRGB newcolor = ColorFromPalette(gCurrentPalette, (valueR + valueG + valueB) / 3, 255);
-            leds[index] = newcolor;
+            ledBuffer[index] = newcolor;
         }
     }
-    GammaCorrection();
+    GammaCorrection(ledBuffer);
 }
 
 // RGB_hiphotic_____________________________________
 
-void RGB_hiphotic()
+void RGB_hiphotic(CRGB *ledBuffer)
 {
-    _taskChangePalette.disable();
-
     uint16_t a = (uint16_t)(g_timeAccumulator * 1.33);
     for (int x = 0; x < NUM_COLS_PLANAR; x++)
     {
         for (int y = 0; y < NUM_ROWS_PLANAR; y++)
         {
             int index = XY_fibon_PLANAR(x, y);
-            leds[index].b = sin8((x - 8) * cos8((y + 20) * 4) / 4 + a);
-            leds[index].g = (sin8(x * 16 + a / 3) + cos8(y * 8 + a / 2)) / 2;
-            leds[index].r = sin8(cos8(x * 8 + a / 3) + sin8(y * 8 + a / 4) + a);
+            ledBuffer[index].b = sin8((x - 8) * cos8((y + 20) * 4) / 4 + a);
+            ledBuffer[index].g = (sin8(x * 16 + a / 3) + cos8(y * 8 + a / 2)) / 2;
+            ledBuffer[index].r = sin8(cos8(x * 8 + a / 3) + sin8(y * 8 + a / 4) + a);
         }
     }
-    GammaCorrection();
+    GammaCorrection(ledBuffer);
 }
 
 // PlasmaBall_____________________________________
 
-void mydrawLine_PB(byte x1, byte y1)
+void mydrawLine_PB(byte x1, byte y1, CRGB *ledBuffer)
 { // draw line frim center
-    _taskChangePalette.disable();
-
     CRGB color;
     byte xsteps = abs8(NUM_COLS_PLANAR / 2 - x1) + 1;
     byte ysteps = abs8(NUM_ROWS_PLANAR / 2 - y1) + 1;
@@ -256,15 +246,13 @@ void mydrawLine_PB(byte x1, byte y1)
         byte dy = lerp8by8(NUM_ROWS_PLANAR / 2, y1, i * 255 / steps);
         uint16_t index = XY_fibon_PLANAR(dx, dy);
         color = CHSV(240 - i * 8, 255, 255);
-        nblend(leds[index], color, 64);
-        leds[index] %= (i * 255 / steps); // for draw gradient line
+        nblend(ledBuffer[index], color, 64);
+        ledBuffer[index] %= (i * 255 / steps); // for draw gradient line
     }
 }
 
-void PlasmaBall()
+void PlasmaBall(CRGB *ledBuffer)
 {
-    _taskChangePalette.disable();
-
     int8_t speed = (int)fmap(g_animationSpeed, MIN_ANIMATION_SPEED, MAX_ANIMATION_SPEED, 0, 10);
 
     byte x1 = beatsin8(18 + speed, 0, (NUM_COLS_PLANAR - 1));
@@ -283,12 +271,12 @@ void PlasmaBall()
 
     fadeToBlackBy(leds, NUM_LEDS, 15);
 
-    mydrawLine_PB(x1, y1);
-    mydrawLine_PB(x2, y2);
-    mydrawLine_PB(x3, y3);
-    mydrawLine_PB(x4, y4);
-    mydrawLine_PB(x5, y5);
-    mydrawLine_PB(x6, y6);
+    mydrawLine_PB(x1, y1, ledBuffer);
+    mydrawLine_PB(x2, y2, ledBuffer);
+    mydrawLine_PB(x3, y3, ledBuffer);
+    mydrawLine_PB(x4, y4, ledBuffer);
+    mydrawLine_PB(x5, y5, ledBuffer);
+    mydrawLine_PB(x6, y6, ledBuffer);
 }
 
 // Fire comets_____________________________________
@@ -346,7 +334,7 @@ void balls()
     rain[buffXY(x2 + 1, y2)] = bright;
 }
 
-void toLeds()
+void toLeds(CRGB *ledBuffer)
 {
     CRGBPalette256 myPal = firepal;
 
@@ -357,30 +345,29 @@ void toLeds()
         {
             int index = XY_fibon_PLANAR(x, (NUM_ROWS_PLANAR - 1) - y);
             CRGB color = ColorFromPalette(myPal, rain[buffIndex], 255);
-            nblend(leds[index], color, 16);
-            // leds[index] = color;
+            nblend(ledBuffer[index], color, 16);
+            // ledBuffer[index] = color;
             buffIndex++;
         }
         buffIndex += 2;
     }
 }
 
-void FireComets()
+void FireComets(CRGB *ledBuffer)
 {
     if (g_patternInitNeeded)
     {
         FastLED.clear();
         g_patternInitNeeded = 0;
-        _taskChangePalette.disable();
     }
     balls();
     fadecenter();
-    toLeds();
+    toLeds(ledBuffer);
 }
 
 // F_lying_____________________________________
 
-void mydrawLine_Fl(byte x, byte y, byte x1, byte y1, CRGB color, bool dot)
+void mydrawLine_Fl(byte x, byte y, byte x1, byte y1, CRGB color, bool dot, CRGB *ledBuffer)
 { // my ugly line draw function )))
 
     byte xsteps = abs8(x - x1) + 1;
@@ -394,20 +381,18 @@ void mydrawLine_Fl(byte x, byte y, byte x1, byte y1, CRGB color, bool dot)
         int index = XY_fibon_PLANAR(dx, dy);
         if (index >= g_lastSafeIndex)
             continue;
-        leds[index] = color; // change to += for brightness look
+        ledBuffer[index] = color; // change to += for brightness look
     }
 
     if (dot)
     { // add white point at the ends of line
-        leds[XY_fibon_PLANAR(x, y)] = CRGB ::White;
-        leds[XY_fibon_PLANAR(x1, y1)] = CRGB ::White;
+        ledBuffer[XY_fibon_PLANAR(x, y)] = CRGB ::White;
+        ledBuffer[XY_fibon_PLANAR(x1, y1)] = CRGB ::White;
     }
 }
 
-void F_lying()
+void F_lying(CRGB *ledBuffer)
 {
-    _taskChangePalette.disable();
-
     static byte hue = 0;
     EVERY_N_MILLISECONDS(30) { hue++; } // 30 - speed of hue change
 
@@ -427,12 +412,12 @@ void F_lying()
 
     fadeToBlackBy(leds, NUM_LEDS, 40);
 
-    mydrawLine_Fl(x1, y1, x2, y2, color, 1);
-    mydrawLine_Fl(x2, y2, x3, y3, color, 1);
-    mydrawLine_Fl(x2, y2, x4, y4, color, 1);
-    mydrawLine_Fl(x3, y3, x4, y4, color, 1);
-    mydrawLine_Fl(x3, y3, x1, y1, color, 1);
-    mydrawLine_Fl(x4, y4, x1, y1, color, 1);
+    mydrawLine_Fl(x1, y1, x2, y2, color, 1, ledBuffer);
+    mydrawLine_Fl(x2, y2, x3, y3, color, 1, ledBuffer);
+    mydrawLine_Fl(x2, y2, x4, y4, color, 1, ledBuffer);
+    mydrawLine_Fl(x3, y3, x4, y4, color, 1, ledBuffer);
+    mydrawLine_Fl(x3, y3, x1, y1, color, 1, ledBuffer);
+    mydrawLine_Fl(x4, y4, x1, y1, color, 1, ledBuffer);
 }
 
 // RGBTunnel_____________________________________
@@ -443,10 +428,9 @@ byte code(int x, int y, int t)
     return outputcode;
 }
 
-void RGBTunnel()
+void RGBTunnel(CRGB *ledBuffer)
 {
-    _taskChangePalette.enableIfNot();
-    uint16_t t = (uint16_t)g_timeAccumulator;
+    uint16_t t = (uint16_t)(g_timeAccumulator * 0.8);
 
     for (byte y = 0; y < NUM_ROWS_PLANAR; y++)
     {
@@ -457,18 +441,17 @@ void RGBTunnel()
                 continue;
 
             CRGB newcolor = ColorFromPalette(gCurrentPalette, code(x, y, t), 255);
-            nblend(leds[ledindex], newcolor, 32);
+            nblend(ledBuffer[ledindex], newcolor, 32);
         }
     }
 }
 
 //_________________________ cylindrical map patterns
-
+// TODO: Too dark!
 // RGB_Caleidoscope1_____________________________________
 
-void RGB_Caleidoscope1()
+void RGB_Caleidoscope1(CRGB *ledBuffer)
 {
-    _taskChangePalette.enableIfNot();
     uint16_t a = (uint16_t)g_timeAccumulator;
 
     for (int j = 0; j < NUM_ROWS_CYLINDER; j++)
@@ -482,17 +465,16 @@ void RGB_Caleidoscope1()
             byte colorIndex = (sin8(i * 16 + a) + cos8(j * 16 + a / 2)) / 2;
             CRGB newcolor = ColorFromPalette(gCurrentPalette, colorIndex, 255);
 
-            leds[index] = newcolor;
+            ledBuffer[index] = newcolor;
         }
     }
-    GammaCorrection();
+    GammaCorrection(ledBuffer);
 }
 
 // RGB_Caleidoscope2_____________________________________
 
-void RGB_Caleidoscope2()
+void RGB_Caleidoscope2(CRGB *ledBuffer)
 {
-    _taskChangePalette.enableIfNot();
     uint16_t a = (uint16_t)g_timeAccumulator;
 
     for (int j = 0; j < NUM_ROWS_CYLINDER; j++)
@@ -506,18 +488,16 @@ void RGB_Caleidoscope2()
             byte colorIndex = (sin8(i * 28 + a) + cos8(j * 28 + a)) >> 1;
             CRGB newcolor = ColorFromPalette(gCurrentPalette, colorIndex, 255);
 
-            leds[index] = newcolor;
+            ledBuffer[index] = newcolor;
         }
     }
-    GammaCorrection();
+    GammaCorrection(ledBuffer);
 }
 
 // Distortion_Waves_cilindr_____________________________________
 
-void Distortion_Waves_cylinder()
+void Distortion_Waves_cylinder(CRGB *ledBuffer)
 {
-    _taskChangePalette.disable();
-
     byte speed = 5;
     uint8_t w = 2;
     uint8_t scale = 2;
@@ -565,19 +545,17 @@ void Distortion_Waves_cylinder()
             valueG = cos_wave[valueG];
             valueB = cos_wave[valueB];
 
-            leds[index].setRGB(valueR, valueG, valueB);
+            ledBuffer[index].setRGB(valueR, valueG, valueB);
         }
     }
 
-    GammaCorrection();
+    GammaCorrection(ledBuffer);
 }
 
 // FireButterfly_____________________________________
 
-void FireButterfly()
+void FireButterfly(CRGB *ledBuffer)
 {
-    _taskChangePalette.disable();
-
     uint16_t a = (uint16_t)(g_timeAccumulator * 2.67); // 8/3 = 2.67
 
     for (int j = 0; j < NUM_ROWS_CYLINDER; j++)
@@ -588,14 +566,14 @@ void FireButterfly()
             if (index == g_lastSafeIndex)
                 continue;
 
-            leds[index] = HeatColor(qsub8(inoise8(i * 60 + a, j * 5 + a, a / 3), abs8(j - (NUM_ROWS_CYLINDER - 1)) * 255 / (NUM_ROWS_CYLINDER + 2)));
+            ledBuffer[index] = HeatColor(qsub8(inoise8(i * 60 + a, j * 5 + a, a / 3), abs8(j - (NUM_ROWS_CYLINDER - 1)) * 255 / (NUM_ROWS_CYLINDER + 2)));
         }
     }
 }
 
 // Sprite_Scroll_____________________________________
 
-void DrawOneFrameSprite(uint16_t xspeed, uint16_t yspeed, byte fract, byte *sprite, byte spr_cols, byte spr_rows)
+void DrawOneFrameSprite(uint16_t xspeed, uint16_t yspeed, byte fract, byte *sprite, byte spr_cols, byte spr_rows, CRGB *ledBuffer)
 {
     CRGB color;
 
@@ -622,17 +600,16 @@ void DrawOneFrameSprite(uint16_t xspeed, uint16_t yspeed, byte fract, byte *spri
             color.g = pgm_read_byte(++SpriteAdr);
             color.b = pgm_read_byte(++SpriteAdr);
 
-            nblend(leds[index], color, fract);
+            nblend(ledBuffer[index], color, fract);
         }
     }
 }
 
 // Swirl_____________________________________
 // FIXME: This animation is a bit janky
-void Swirl()
+void Swirl(CRGB *ledBuffer)
 {
-    _taskChangePalette.enableIfNot();
-    uint16_t a = (uint16_t)(g_timeAccumulator * 1.14); // 8/7 = 1.14
+    uint16_t a = millis() / 7;
 
     for (int j = 0; j < NUM_ROWS_CYLINDER; j++)
     {
@@ -642,18 +619,17 @@ void Swirl()
 
             if (index == g_lastSafeIndex)
                 continue;
-            // leds[index].setHue(i*54+(a>>2)+(sin8(j*16+a))>>1);
+            // ledBuffer[index].setHue(i*54+(a>>2)+(sin8(j*16+a))>>1);
             byte hue = i * 56 + (a >> 2) + (sin8(j * 16 + a)) >> 1;
-            nblend(leds[index], ColorFromPalette(gCurrentPalette, hue, 255), 16);
+            nblend(ledBuffer[index], ColorFromPalette(gCurrentPalette, hue, 255), 16);
         }
     } // end cycles
 }
 
 // GPT o1-preview refactor of Swirl with floating-point math
 // Doesn't solve the issue yet, more experimentation needed
-void FloatingPointSwirl()
+void FloatingPointSwirl(CRGB *ledBuffer)
 {
-    _taskChangePalette.enableIfNot();
     // Use a floating-point variable for 'a'
     float a = g_timeAccumulator * 1.14f; // 8/7 = 1.14
 
@@ -677,17 +653,16 @@ void FloatingPointSwirl()
             float hue = i * 56.0f + (a / 4.0f) + (sin8(j * 16 + (uint8_t)a) / 2.0f);
 
             // Use nblend for smooth color transitions
-            nblend(leds[index], ColorFromPalette(gCurrentPalette, (uint8_t)hue, 255), 16);
+            nblend(ledBuffer[index], ColorFromPalette(gCurrentPalette, (uint8_t)hue, 255), 16);
         }
     }
 }
 
 // cylindrical_Pattern_____________________________________
 
-void cylindrical_Pattern()
+void cylindrical_Pattern(CRGB *ledBuffer)
 {
-    _taskChangePalette.enableIfNot();
-    uint16_t a = (uint16_t)(g_timeAccumulator * 0.333);
+    uint16_t a = (uint16_t)(g_timeAccumulator * 0.5);
     float scale = (sin(a / 32 * PI / 180) * 16) + 32;
 
     float scale1 = 0;
@@ -701,7 +676,7 @@ void cylindrical_Pattern()
 
             // byte hue = (sin8((i*(int)scale)+a)>>1)+(sin8((j*16)+a))>>1;
             byte hue = (sin8(i + (int)scale1 + a) + sin8((j * 16) + a)) / 2;
-            nblend(leds[index], ColorFromPalette(gCurrentPalette, hue, 255), 16);
+            nblend(ledBuffer[index], ColorFromPalette(gCurrentPalette, hue, 255), 16);
         }
         scale1 += scale;
     }
@@ -709,10 +684,8 @@ void cylindrical_Pattern()
 
 // Spiral_____________________________________
 
-void Spiral()
+void Spiral(CRGB *ledBuffer)
 {
-    _taskChangePalette.enableIfNot();
-
     uint16_t a = (uint16_t)g_timeAccumulator;
     float scale = (sin(a / 32 * PI / 180) * 18) - 6;
 
@@ -726,7 +699,7 @@ void Spiral()
                 continue;
 
             CRGB newcolor = ColorFromPalette(gCurrentPalette, (i * 255 / (NUM_COLS_CYLINDER - 1) + j * 255 / (NUM_ROWS_CYLINDER - 1)) + (int)scale1 + a + sin16(a) / 16384, 255);
-            nblend(leds[index], newcolor, 16);
+            nblend(ledBuffer[index], newcolor, 16);
         }
         scale1 += scale;
     }
@@ -734,14 +707,13 @@ void Spiral()
 
 // Spiral2_____________________________________
 
-void Spiral2()
+void Spiral2(CRGB *ledBuffer)
 {
     if (g_patternInitNeeded)
     {
         raininit();
         g_patternInitNeeded = 0;
         FastLED.clear();
-        _taskChangePalette.enableIfNot();
     }
 
     uint16_t a = (uint16_t)(g_timeAccumulator * 1.33); // 8/6 = 1.33
@@ -757,7 +729,7 @@ void Spiral2()
                 continue;
 
             CRGB newcolor = ColorFromPalette(gCurrentPalette, (i * 255 / (NUM_COLS_CYLINDER - 1) * 3 + j * 255 / (NUM_ROWS_CYLINDER - 1) / 8) + a + sin16(a) / 16384, 255);
-            nblend(leds[index], newcolor, 16);
+            nblend(ledBuffer[index], newcolor, 16);
         }
         scale1 += scale;
     }
@@ -771,7 +743,7 @@ void Spiral2()
                 continue;
 
             CRGB newcolor = ColorFromPalette(gCurrentPalette, (i * 255 / (NUM_COLS_CYLINDER - 1) * 3 - j * 255 / (NUM_ROWS_CYLINDER - 1) / 8) - a + sin16(a) / 16384, 255);
-            nblend(leds[index], newcolor, 32);
+            nblend(ledBuffer[index], newcolor, 32);
         }
         scale1 += scale;
     }
@@ -779,9 +751,8 @@ void Spiral2()
 
 // Flower_____________________________________
 
-void Flower()
+void Flower(CRGB *ledBuffer)
 {
-    _taskChangePalette.enableIfNot();
     uint16_t a = (uint16_t)g_timeAccumulator;
 
     for (int j = 0; j < NUM_ROWS_CYLINDER; j++)
@@ -792,7 +763,7 @@ void Flower()
             if (index == g_lastSafeIndex)
                 continue;
             CRGB newcolor = ColorFromPalette(gCurrentPalette, (j * 255 / (NUM_ROWS_CYLINDER - 1) + sin8((i * 8 + a)) + sin8(i * 30 - a) + a) / 2, 255);
-            nblend(leds[index], newcolor, 16);
+            nblend(ledBuffer[index], newcolor, 16);
         }
     }
 }
@@ -801,13 +772,11 @@ void Flower()
 
 // pride_____________________________________
 
-void pride()
+void pride(CRGB *ledBuffer)
 // Pride2015
 // Animated, ever-changing rainbows.
 // by Mark Kriegsman
 {
-    _taskChangePalette.disable();
-
     static uint16_t sPseudotime = 0;
     static uint16_t sLastMillis = 0;
     static uint16_t sHue16 = 0;
@@ -846,7 +815,7 @@ void pride()
         // uint16_t ledindex = pgm_read_byte (FibonCilindrTable+pixelnumber);
 
         uint16_t ledindex = pgm_read_byte(fibonacciToPhysical + i);
-        nblend(leds[ledindex], newcolor, 64);
+        nblend(ledBuffer[ledindex], newcolor, 64);
     }
 }
 
@@ -863,9 +832,8 @@ void pride()
 //   http://fastled.io/tools/paletteknife/
 //
 
-void colorwaves()
+void colorwaves(CRGB *ledBuffer)
 {
-    _taskChangePalette.enableIfNot();
     static uint16_t sPseudotime = 0;
     static uint16_t sLastMillis = 0;
     static uint16_t sHue16 = 0;
@@ -916,7 +884,7 @@ void colorwaves()
         pixelnumber = (NUM_LEDS - 1) - pixelnumber;
 
         byte ledindex = pgm_read_byte(fibonacciToPhysical + pixelnumber);
-        nblend(leds[ledindex], newcolor, 64);
+        nblend(ledBuffer[ledindex], newcolor, 64);
     }
 }
 
@@ -924,13 +892,12 @@ void colorwaves()
 
 // SoftTwinkles_____________________________________
 
-void SoftTwinkles()
+void SoftTwinkles(CRGB *ledBuffer)
 {
     if (g_patternInitNeeded)
     {
         FastLED.clear();
         g_patternInitNeeded = 0;
-        _taskChangePalette.disable();
     }
 
     static const CRGB lightcolor(0, 4, 4);
@@ -938,35 +905,33 @@ void SoftTwinkles()
 
     for (int i = 0; i < NUM_LEDS; i++)
     {
-        if (!leds[i])
+        if (!ledBuffer[i])
             continue; // skip black pixels
-        if (leds[i].b & 1)
-        {                         // is red odd?
-            leds[i] -= darkColor; // darken if red is odd
+        if (ledBuffer[i].b & 1)
+        {                              // is red odd?
+            ledBuffer[i] -= darkColor; // darken if red is odd
         }
         else
         {
-            leds[i] += lightcolor; // brighten if red is even
+            ledBuffer[i] += lightcolor; // brighten if red is even
         }
     }
 
     int j = random16(NUM_LEDS);
-    if (!leds[j])
+    if (!ledBuffer[j])
     {
-        leds[j].b = 2;
+        ledBuffer[j].b = 2;
     }
     j = random16(NUM_LEDS);
-    if (leds[j].r & 1)
-        leds[j].b -= 1;
+    if (ledBuffer[j].r & 1)
+        ledBuffer[j].b -= 1;
 }
 
-void spiralCylinderWave()
+void spiralCylinderWave(CRGB *ledBuffer)
 {
-    _taskChangePalette.enableIfNot();
-
     // Animation parameters
     const float waveLength = 3.0f;       // Controls the number of waves around the cylinder
-    const float speedMultiplier = 0.05f; // Adjust this to control speed via g_timeAccumulator
+    const float speedMultiplier = 0.03f; // Adjust this to control speed via g_timeAccumulator
 
     // Loop through cylinder coordinates
     for (uint8_t x = 0; x < NUM_COLS_CYLINDER; x++)
@@ -994,15 +959,13 @@ void spiralCylinderWave()
             CRGB color = ColorFromPalette(gCurrentPalette, colorIndex, brightness);
 
             // Set the LED color
-            leds[index] = color;
+            ledBuffer[index] = color;
         }
     }
 }
 
-void testCylinderMapping()
+void testCylinderMapping(CRGB *ledBuffer)
 {
-    _taskChangePalette.disable();
-
     for (uint8_t y = 0; y < NUM_ROWS_CYLINDER; y++)
     {
         for (uint8_t x = 0; x < NUM_COLS_CYLINDER; x++)
@@ -1018,12 +981,12 @@ void testCylinderMapping()
             uint8_t hue = map(x, 0, NUM_COLS_CYLINDER - 1, 0, 255);
 
             // Set LED color using HSV hue
-            leds[index] = CHSV(hue, 255, 255);
+            ledBuffer[index] = CHSV(hue, 255, 255);
         }
     }
 }
 
-void testCylinderMapping2()
+void testCylinderMapping2(CRGB *ledBuffer)
 {
     // Calculate rotation angle based on time
     uint8_t scaledAngle = (uint8_t)(g_timeAccumulator * 0.333); // Adjust multiplier for speed
@@ -1045,18 +1008,18 @@ void testCylinderMapping2()
                               0, 255);
 
             // Set LED color using HSV hue
-            leds[index] = CHSV(hue, 255, 255);
+            ledBuffer[index] = CHSV(hue, 255, 255); // 255 brightness is too much, 128 too little
         }
     }
+    GammaCorrection(ledBuffer);
 }
 
-void hypnoticSpiral()
+void hypnoticWings(CRGB *ledBuffer)
 {
-    _taskChangePalette.enableIfNot();
     // Animation parameters
-    const float speedMultiplier = 0.05; // Speed of the inward movement
-    const float frequency = 0.2;        // Controls the number of waves
-    const float amplitude = 127.5;      // Half of 255 for brightness calculation
+    const float speedMultiplier = 0.025; // Speed of the inward movement
+    const float frequency = 0.2;         // Controls the number of waves
+    const float amplitude = 127.5;       // Half of 255 for brightness calculation
 
     // Time variable for animation
     float time = g_timeAccumulator * speedMultiplier;
@@ -1093,14 +1056,13 @@ void hypnoticSpiral()
             CRGB color = ColorFromPalette(gCurrentPalette, colorIndex, brightness);
 
             // Set the LED color
-            leds[index] = color;
+            ledBuffer[index] = color;
         }
     }
 }
 
-void hypnoticWaves()
+void hypnoticWaves(CRGB *ledBuffer)
 {
-    _taskChangePalette.enableIfNot();
     // Animation parameters
     const float speedMultiplier = 0.025;         // Speed of the inward movement
     const float frequency = 1.0;                 // Controls the number of waves
@@ -1146,7 +1108,7 @@ void hypnoticWaves()
 
             // Set the LED color with full brightness at center
             CRGB color = ColorFromPalette(gCurrentPalette, colorIndex, brightness);
-            leds[index] = color;
+            ledBuffer[index] = color;
         }
     }
 }
@@ -1176,7 +1138,7 @@ void hypnoticWaves()
 //     if (index != g_lastSafeIndex && index < NUM_LEDS)
 //     {
 //       // Light up the LED with a bright color
-//       leds[index] = CRGB::White;
+//       ledBuffer[index] = CRGB::White;
 
 //       // Print LED information to the Serial Monitor
 //       Serial.print("Lighting up LED ");
@@ -1225,9 +1187,9 @@ SimplePatternList gPatterns = // this is list of patterns
         hypnoticWaves,
         testCylinderMapping2,
         DiagonalPattern,
-        hypnoticSpiral,
+        hypnoticWings,
         spiralCylinderWave,
-        PlasmaBall,
+        // PlasmaBall,
         // F_lying,  // I don't like it enough.
         RGBTunnel,
         Flower,
@@ -1253,9 +1215,9 @@ const char *patternNames[] = {
     "hypnoticWaves",
     "testCylinderMapping2",
     "DiagonalPattern",
-    "hypnoticSpiral",
+    "hypnoticWings",
     "spiralCylinderWave",
-    "PlasmaBall",
+    // "PlasmaBall",
     // "F_lying",
     "RGBTunnel",
     "Flower",
@@ -1272,3 +1234,5 @@ const char *patternNames[] = {
     "Spiral",
     "DigitalRain",
     "fire2021"};
+
+const uint8_t gPatternCount = sizeof(patternNames) / sizeof(patternNames[0]);

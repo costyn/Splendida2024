@@ -46,10 +46,11 @@ void encoderSetup()
     RGBEncoder.writeStep((int32_t)ENCODER_STEP);
 }
 
-void readEncoders()
+void readEncoder()
 {
     if (digitalRead(I2C_INT_PIN) == LOW)
     {
+        _taskEncoderAnimation.delay(ENCODER_ANIMATION_IDLE_TIMEOUT);
         RGBEncoder.updateStatus();
     }
 }
@@ -62,19 +63,38 @@ void encoder_onChange(i2cEncoderLibV2 *obj)
     switch (g_encoderState)
     {
     case BRIGHTNESS:
-        if (increasing)
+        setEncoderColor(obj, BRIGHTNESS);
+        uint8_t step;
+        if (g_targetBrightness < 20)
         {
-            g_targetBrightness = min(MAX_BRIGHTNESS, g_targetBrightness + BRIGHNESS_STEP);
+            step = 1; // Fine control at low brightness
+        }
+        else if (g_targetBrightness < 60)
+        {
+            step = 3; // Medium steps
+        }
+        else if (g_targetBrightness < 150)
+        {
+            step = 5; // Larger steps
         }
         else
         {
-            g_targetBrightness = max(MIN_BRIGHTNESS, g_targetBrightness - BRIGHNESS_STEP);
+            step = 10; // Biggest steps at high brightness
         }
-        Serial.printf("%s: Brightness target: %d\n", SGN, g_targetBrightness);
+
+        if (increasing)
+        {
+            g_targetBrightness = min(MAX_BRIGHTNESS, g_targetBrightness + step);
+        }
+        else
+        {
+            g_targetBrightness = max(MIN_BRIGHTNESS, g_targetBrightness - step);
+        }
         _taskChangeToBrightness.enableIfNot();
         break;
 
     case SPEED:
+        setEncoderColor(obj, SPEED);
         if (increasing)
         {
             g_animationSpeed = min(0.4f, g_animationSpeed + 0.01f);
@@ -108,6 +128,14 @@ void encoder_doubleClick(i2cEncoderLibV2 *obj)
 void setEncoderState(i2cEncoderLibV2 *obj, EncoderState state)
 {
     constexpr const char *SGN = "setEncoderState()";
+    setEncoderColor(obj, state);
+    g_encoderState = state;
+    Serial.printf("%s: %s: EncoderState: %s\n", timeToString().c_str(), SGN, state == BRIGHTNESS ? "BRIGHTNESS" : "SPEED");
+}
+
+void setEncoderColor(i2cEncoderLibV2 *obj, EncoderState state)
+{
+    // constexpr const char *SGN = "setEncoderColor()";
 
     switch (state)
     {
@@ -118,6 +146,20 @@ void setEncoderState(i2cEncoderLibV2 *obj, EncoderState state)
         obj->writeRGBCode(0x00FFFF); // Cyan
         break;
     }
-    g_encoderState = state;
-    Serial.printf("%s: %s: EncoderState: %s\n", timeToString().c_str(), SGN, state == BRIGHTNESS ? "BRIGHTNESS" : "SPEED");
+}
+
+void updateEncoderIdleAnimation()
+{
+    static uint8_t colorIndex = 0;
+
+    // Get color from current palette
+    CRGB rgb = ColorFromPalette(gCurrentPalette, colorIndex, 255);
+
+    // Update encoder LED
+    RGBEncoder.writeLEDR(rgb.r);
+    RGBEncoder.writeLEDG(rgb.g);
+    RGBEncoder.writeLEDB(rgb.b);
+
+    // Increment color index slowly (using Task scheduling for speed)
+    colorIndex++;
 }

@@ -44,7 +44,12 @@ void startFadeOut();
 void startFadeIn();
 void fade();
 
-void readEncoders();
+void readEncoder();
 void encoderSetup();
+
+void updateEncoderIdleAnimation();
+
+void bufferCrossfade();
+void bufferBlendDone();
 
 #endif // SPLENDIDANEW_H
