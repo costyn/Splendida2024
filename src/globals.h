@@ -77,8 +77,10 @@ extern const char *patternNames[];
 extern const uint8_t gPatternCount;
 extern uint8_t gBuffer1PatternNumber;
 extern uint8_t gBuffer2PatternNumber;
+extern byte g_buffer1InitNeeded;
+extern byte g_buffer2InitNeeded;
+
 extern CRGB g_statusLed[];
-extern byte g_patternInitNeeded;
 extern uint8_t g_currentBrightness;
 extern CRGB leds[NUM_LEDS];
 extern const char *patternNames[];

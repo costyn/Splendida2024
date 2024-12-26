@@ -59,7 +59,7 @@ void GammaCorrection(CRGB *ledBuffer)
 
 // DigitalRain_____________________________________
 
-void changepattern()
+void changeRainPatter()
 {
     int rand1 = random16(NUM_LEDS_PLANAR);
     int rand2 = random16(NUM_LEDS_PLANAR);
@@ -68,16 +68,16 @@ void changepattern()
         rain[rand1] = 0;
         rain[rand2] = 1;
     }
-} // changepattern
+} // changeRainPatter
 
-void raininit()
+void initializeRain()
 { // init array of dots. run once
     for (int i = 0; i < NUM_LEDS_PLANAR; i++)
         rain[i] = 0;
     byte rainNumb = random8(20, 30); // 5..8 how many dots with some random variation
     for (int i = 0; i < rainNumb; i++)
         rain[random16(NUM_LEDS_PLANAR)] = 1;
-} // raininit
+} // initializeRain
 
 void updaterain(CRGB *ledBuffer)
 {
@@ -94,20 +94,30 @@ void updaterain(CRGB *ledBuffer)
         }
     }
 
-    fadeToBlackBy(leds, NUM_LEDS, 70);
+    fadeToBlackBy(ledBuffer, NUM_LEDS, 70);
     speed++;
 } // updaterain
 
 void DigitalRain(CRGB *ledBuffer)
 {
-    if (g_patternInitNeeded)
+    // I don't know why this works, but for now it does
+    if (_renderBuffer == BUFFER2 && g_buffer1InitNeeded)
     {
-        raininit();
-        g_patternInitNeeded = 0;
-        FastLED.clear();
+        Serial.print("DigitalRain init: ");
+        initializeRain();
+        g_buffer1InitNeeded = 0;
+        // FastLED.clear();
     }
+    if (_renderBuffer == BUFFER1 && g_buffer2InitNeeded)
+    {
+        Serial.print("DigitalRain init: ");
+        initializeRain();
+        g_buffer2InitNeeded = 0;
+        // FastLED.clear();
+    }
+
     EVERY_N_MILLISECONDS(80) { updaterain(ledBuffer); }
-    EVERY_N_MILLISECONDS(15) { changepattern(); }
+    EVERY_N_MILLISECONDS(15) { changeRainPatter(); }
 }
 
 void DiagonalPattern(CRGB *ledBuffer)
@@ -269,7 +279,7 @@ void PlasmaBall(CRGB *ledBuffer)
     byte y5 = beatsin8(30 + speed, 0, (NUM_ROWS_PLANAR - 1));
     byte y6 = beatsin8(19 + speed, 0, (NUM_ROWS_PLANAR - 1));
 
-    fadeToBlackBy(leds, NUM_LEDS, 15);
+    fadeToBlackBy(ledBuffer, NUM_LEDS, 15);
 
     mydrawLine_PB(x1, y1, ledBuffer);
     mydrawLine_PB(x2, y2, ledBuffer);
@@ -355,11 +365,6 @@ void toLeds(CRGB *ledBuffer)
 
 void FireComets(CRGB *ledBuffer)
 {
-    if (g_patternInitNeeded)
-    {
-        FastLED.clear();
-        g_patternInitNeeded = 0;
-    }
     balls();
     fadecenter();
     toLeds(ledBuffer);
@@ -410,7 +415,7 @@ void F_lying(CRGB *ledBuffer)
 
     CRGB color = CHSV(hue, 255, 255);
 
-    fadeToBlackBy(leds, NUM_LEDS, 40);
+    fadeToBlackBy(ledBuffer, NUM_LEDS, 40);
 
     mydrawLine_Fl(x1, y1, x2, y2, color, 1, ledBuffer);
     mydrawLine_Fl(x2, y2, x3, y3, color, 1, ledBuffer);
@@ -709,13 +714,6 @@ void Spiral(CRGB *ledBuffer)
 
 void Spiral2(CRGB *ledBuffer)
 {
-    if (g_patternInitNeeded)
-    {
-        raininit();
-        g_patternInitNeeded = 0;
-        FastLED.clear();
-    }
-
     uint16_t a = (uint16_t)(g_timeAccumulator * 1.33); // 8/6 = 1.33
     float scale = sin(a / 32 * PI / 180) * 12;
 
@@ -894,12 +892,6 @@ void colorwaves(CRGB *ledBuffer)
 
 void SoftTwinkles(CRGB *ledBuffer)
 {
-    if (g_patternInitNeeded)
-    {
-        FastLED.clear();
-        g_patternInitNeeded = 0;
-    }
-
     static const CRGB lightcolor(0, 4, 4);
     static const CRGB darkColor(0, 2, 2);
 
@@ -1182,6 +1174,7 @@ void hypnoticWaves(CRGB *ledBuffer)
 SimplePatternList gPatterns = // this is list of patterns
     {
         SoftTwinkles,
+        DigitalRain,
         cylindrical_Pattern,
         FireComets,
         hypnoticWaves,
@@ -1204,12 +1197,13 @@ SimplePatternList gPatterns = // this is list of patterns
         Swirl,
         RGB_hiphotic,
         Spiral,
-        DigitalRain,
+
         fire2021,
 };
 
 const char *patternNames[] = {
     "SoftTwinkles",
+    "DigitalRain",
     "cylindrical_Pattern",
     "FireComets",
     "hypnoticWaves",
@@ -1232,7 +1226,6 @@ const char *patternNames[] = {
     "Swirl",
     "RGB_hiphotic",
     "Spiral",
-    "DigitalRain",
     "fire2021"};
 
 const uint8_t gPatternCount = sizeof(patternNames) / sizeof(patternNames[0]);

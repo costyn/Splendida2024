@@ -46,8 +46,8 @@ void DigitalRain(CRGB *buffer);
 void fire2021(CRGB *buffer);
 
 void balls();
-void raininit();
+void initializeRain();
 void updaterain(CRGB *buffer);
-void changepattern();
+void changeRainPatter();
 
 #endif

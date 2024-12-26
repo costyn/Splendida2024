@@ -23,7 +23,8 @@ float g_timeAccumulator = 0.0f;
 uint8_t gBuffer1PatternNumber = 0;
 uint8_t gBuffer2PatternNumber = 0;
 CRGB g_statusLed[1];
-byte g_patternInitNeeded = 1;
+byte g_buffer1InitNeeded = 1;
+byte g_buffer2InitNeeded = 1;
 CRGB leds[NUM_LEDS];
 CRGB buffer1[NUM_LEDS + 1];
 CRGB buffer2[NUM_LEDS + 1];
@@ -119,6 +120,20 @@ void runPattern()
 
 void bufferCrossfade()
 {
+  if (_taskBufferCrossfade.getRunCounter() == 1)
+  {
+    if (_renderBuffer == BUFFER1)
+    {
+      g_buffer2InitNeeded = 1;
+      // Serial.println("g_buffer2InitNeeded TRUE");
+    }
+    else
+    {
+      g_buffer1InitNeeded = 1;
+      // Serial.println("g_buffer1InitNeeded TRUE");
+    }
+  }
+
   if (_renderBuffer == BUFFER1)
   {
     _bufferBlendAmount = _taskBufferCrossfade.getRunCounter();
@@ -133,8 +148,6 @@ void bufferCrossfade()
 void bufferBlendDone()
 {
   constexpr const char *SGN = "bufferBlendDone()";
-
-  g_patternInitNeeded = 1;
   _renderBuffer == BUFFER1 ? _renderBuffer = BUFFER2 : _renderBuffer = BUFFER1;
   _taskBufferCrossfade.setIterations(CROSSFADE_STEPS);
 
