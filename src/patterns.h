@@ -17,6 +17,9 @@ typedef PatternFunction SimplePatternList[];
 
 byte rain[(NUM_COLS_PLANAR + 2) * (NUM_ROWS_PLANAR + 2)];
 
+extern const char *patternNames[];
+extern const uint8_t gPatternCount;
+
 void SoftTwinkles(CRGB *buffer);
 void cylindrical_Pattern(CRGB *buffer);
 void FireComets(CRGB *buffer);

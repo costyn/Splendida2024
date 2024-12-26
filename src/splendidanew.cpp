@@ -27,7 +27,7 @@ byte g_patternInitNeeded = 1;
 CRGB leds[NUM_LEDS];
 CRGB buffer1[NUM_LEDS + 1];
 CRGB buffer2[NUM_LEDS + 1];
-uint8_t g_lastSafeIndex = 255;
+uint16_t g_lastSafeIndex = 256;
 CRGBPalette16 gTargetPalette = gGradientPalettes[random8(gGradientPaletteCount)]; // Choose random palette on start
 RenderBuffer _renderBuffer = BUFFER1;
 
@@ -39,7 +39,7 @@ Task _taskChangeToBrightness(10 * TASK_MILLISECOND, TASK_FOREVER, &changeToBrigh
 // Calls the pattern rendering functions
 Task _taskRunPattern(1 * TASK_MILLISECOND, TASK_FOREVER, &runPattern);
 // Blends the two animation buffers to crossfade between patterns
-Task _taskBufferBlend(round(DEFAULT_BLEND_TIME / BLEND_STEPS) * TASK_MILLISECOND, BLEND_STEPS, &bufferBlend);
+Task _taskBufferCrossfade(round(CROSSFADE_TIME / CROSSFADE_STEPS) * TASK_MILLISECOND, CROSSFADE_STEPS, &bufferCrossfade);
 // Changes the palette every SECONDS_PER_PALETTE seconds
 Task _taskChangePalette(SECONDS_PER_PALETTE *TASK_SECOND, TASK_FOREVER, &changePalette);
 // Smoothly blends during palette changes
@@ -68,8 +68,8 @@ void setup()
   _runner.addTask(_taskReadEncoder);
   _runner.addTask(_taskEncoderAnimation);
 
-  _runner.addTask(_taskBufferBlend);
-  _taskBufferBlend.setOnDisable(&bufferBlendDone);
+  _runner.addTask(_taskBufferCrossfade);
+  _taskBufferCrossfade.setOnDisable(&bufferBlendDone);
 
   _taskChangeToBrightness.enable();
   _taskRunPattern.enable();
@@ -117,29 +117,31 @@ void runPattern()
   // Pass the LED buffer to the pattern function
 }
 
-void bufferBlend()
+void bufferCrossfade()
 {
   if (_renderBuffer == BUFFER1)
   {
-    _bufferBlendAmount = _taskBufferBlend.getRunCounter();
+    _bufferBlendAmount = _taskBufferCrossfade.getRunCounter();
   }
   else
   {
-    _bufferBlendAmount = BLEND_STEPS - _taskBufferBlend.getRunCounter();
+    _bufferBlendAmount = CROSSFADE_STEPS - _taskBufferCrossfade.getRunCounter();
   }
-  Serial.printf(".", _bufferBlendAmount);
+  Serial.print(".");
 }
 
 void bufferBlendDone()
 {
-  g_patternInitNeeded = 1;
   constexpr const char *SGN = "bufferBlendDone()";
-  Serial.printf("\n");
+
+  g_patternInitNeeded = 1;
   _renderBuffer == BUFFER1 ? _renderBuffer = BUFFER2 : _renderBuffer = BUFFER1;
+  _taskBufferCrossfade.setIterations(CROSSFADE_STEPS);
+
+  Serial.println("Done");
   String buffer = _renderBuffer == BUFFER1 ? "1" : "2";
-  Serial.printf("%s: %s: Done. Rendering to buffer %s\n", timeToString().c_str(), SGN, buffer);
+  Serial.printf("%s: %s: Rendering to buffer %s\n", timeToString().c_str(), SGN, buffer);
   printPatternAndPalette();
-  _taskBufferBlend.setIterations(BLEND_STEPS);
 }
 
 // Usage example in pattern transition:
@@ -150,13 +152,13 @@ void changePattern()
   Serial.printf("%s: %s: Crossfading", timeToString().c_str(), SGN);
   if (_renderBuffer == BUFFER1)
   {
-    gBuffer2PatternNumber = (gBuffer1PatternNumber + 1) % NUM_PATTERNS;
+    gBuffer2PatternNumber = (gBuffer1PatternNumber + 1) % gPatternCount;
   }
   else
   {
-    gBuffer1PatternNumber = (gBuffer2PatternNumber + 1) % NUM_PATTERNS;
+    gBuffer1PatternNumber = (gBuffer2PatternNumber + 1) % gPatternCount;
   }
-  _taskBufferBlend.enableIfNot();
+  _taskBufferCrossfade.enableIfNot();
 }
 
 void printPatternAndPalette()

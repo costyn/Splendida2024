@@ -49,7 +49,7 @@ void encoderSetup();
 
 void updateEncoderIdleAnimation();
 
-void bufferBlend();
+void bufferCrossfade();
 void bufferBlendDone();
 
 #endif // SPLENDIDANEW_H

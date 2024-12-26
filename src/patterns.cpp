@@ -1017,9 +1017,9 @@ void testCylinderMapping2(CRGB *ledBuffer)
 void hypnoticWings(CRGB *ledBuffer)
 {
     // Animation parameters
-    const float speedMultiplier = 0.05; // Speed of the inward movement
-    const float frequency = 0.2;        // Controls the number of waves
-    const float amplitude = 127.5;      // Half of 255 for brightness calculation
+    const float speedMultiplier = 0.025; // Speed of the inward movement
+    const float frequency = 0.2;         // Controls the number of waves
+    const float amplitude = 127.5;       // Half of 255 for brightness calculation
 
     // Time variable for animation
     float time = g_timeAccumulator * speedMultiplier;
@@ -1234,3 +1234,5 @@ const char *patternNames[] = {
     "Spiral",
     "DigitalRain",
     "fire2021"};
+
+const uint8_t gPatternCount = sizeof(patternNames) / sizeof(patternNames[0]);
