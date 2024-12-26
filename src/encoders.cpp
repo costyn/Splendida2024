@@ -147,19 +147,19 @@ void setEncoderColor(i2cEncoderLibV2 *obj, EncoderState state)
         break;
     }
 }
-
 void updateEncoderIdleAnimation()
 {
-    static uint8_t colorIndex = 0;
+    // Grab the color from led 0
+    CRGB rgb = leds[128];
 
-    // Get color from current palette
-    CRGB rgb = ColorFromPalette(gCurrentPalette, colorIndex, 255);
+    // Ensure the max brightness is applied to the encoder LED
+    uint8_t maxBrightness = 255;
+    uint8_t r = map(rgb.r, 0, 255, 0, maxBrightness);
+    uint8_t g = map(rgb.g, 0, 255, 0, maxBrightness);
+    uint8_t b = map(rgb.b, 0, 255, 0, maxBrightness);
 
     // Update encoder LED
-    RGBEncoder.writeLEDR(rgb.r);
-    RGBEncoder.writeLEDG(rgb.g);
-    RGBEncoder.writeLEDB(rgb.b);
-
-    // Increment color index slowly (using Task scheduling for speed)
-    colorIndex++;
+    RGBEncoder.writeLEDR(r);
+    RGBEncoder.writeLEDG(g);
+    RGBEncoder.writeLEDB(b);
 }

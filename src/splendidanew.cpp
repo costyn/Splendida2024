@@ -13,6 +13,9 @@
 // double click change bright in loop 0..maxbright with 7 steps. not affect to Automode
 // long press activate Automode ON
 
+// TODO
+// - Check if if crossfading is already happening before starting a new one
+
 #include "splendidanew.h"
 #include "encoders.h"
 
@@ -28,7 +31,7 @@ byte g_buffer2InitNeeded = 1;
 CRGB leds[NUM_LEDS];
 CRGB buffer1[NUM_LEDS + 1];
 CRGB buffer2[NUM_LEDS + 1];
-uint16_t g_lastSafeIndex = 256;
+uint16_t g_lastSafeIndex = 256;                                                   // FIXME change to a #define
 CRGBPalette16 gTargetPalette = gGradientPalettes[random8(gGradientPaletteCount)]; // Choose random palette on start
 RenderBuffer _renderBuffer = BUFFER1;
 

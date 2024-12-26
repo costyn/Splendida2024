@@ -54,7 +54,7 @@
 #define CROSSFADE_TIME 4000 // milliseconds
 #define CROSSFADE_STEPS 255 // 255 = max (8 bit)
 
-#define ENCODER_ANIMATION_IDLE_TIMEOUT 5000
+#define ENCODER_ANIMATION_IDLE_TIMEOUT 2000
 
 enum RenderBuffer
 {

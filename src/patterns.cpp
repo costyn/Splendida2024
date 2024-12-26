@@ -103,14 +103,14 @@ void DigitalRain(CRGB *ledBuffer)
     // I don't know why this works, but for now it does
     if (_renderBuffer == BUFFER2 && g_buffer1InitNeeded)
     {
-        Serial.print("DigitalRain init: ");
+        // Serial.print("DigitalRain init: ");
         initializeRain();
         g_buffer1InitNeeded = 0;
         // FastLED.clear();
     }
     if (_renderBuffer == BUFFER1 && g_buffer2InitNeeded)
     {
-        Serial.print("DigitalRain init: ");
+        // Serial.print("DigitalRain init: ");
         initializeRain();
         g_buffer2InitNeeded = 0;
         // FastLED.clear();
@@ -611,24 +611,58 @@ void DrawOneFrameSprite(uint16_t xspeed, uint16_t yspeed, byte fract, byte *spri
 }
 
 // Swirl_____________________________________
-// FIXME: This animation is a bit janky
 void Swirl(CRGB *ledBuffer)
 {
-    uint16_t a = millis() / 7;
+    uint16_t a = (uint16_t)(g_timeAccumulator * 1.2);
 
     for (int j = 0; j < NUM_ROWS_CYLINDER; j++)
     {
         for (int i = 0; i < NUM_COLS_CYLINDER; i++)
         {
-            uint16_t index = XY_CYLINDER((i + a / 32) % NUM_COLS_CYLINDER, j);
-
-            if (index == g_lastSafeIndex)
-                continue;
-            // ledBuffer[index].setHue(i*54+(a>>2)+(sin8(j*16+a))>>1);
-            byte hue = i * 56 + (a >> 2) + (sin8(j * 16 + a)) >> 1;
-            nblend(ledBuffer[index], ColorFromPalette(gCurrentPalette, hue, 255), 16);
+            uint16_t index = XY_CYLINDER(i, j);
+            if (index != g_lastSafeIndex)
+            {
+                // ledBuffer[index].setHue(i * 24 + (sin8(j * 16 + a)) >> 1);
+                byte hue = i * 56 + (a >> 2) + (sin8(j * 16 + a)) >> 1;
+                nblend(ledBuffer[index], ColorFromPalette(gCurrentPalette, hue, 255), 16);
+            }
         }
-    } // end cycles
+    }
+}
+
+// TODO add to playlist
+void SwirlPlanar(CRGB *ledBuffer)
+{
+
+    uint16_t a = millis() / 6;
+
+    for (int j = 0; j < NUM_ROWS_PLANAR; j++)
+    {
+        for (int i = 0; i < NUM_COLS_PLANAR; i++)
+        {
+            uint16_t index = XY_fibon_PLANAR(i, j);
+            ledBuffer[index].setHue(i * 24 + (sin8(j * 16 + a)) >> 1);
+        }
+    }
+}
+// TODO add to playlist
+void SwirlDuo(CRGB *ledBuffer)
+{
+    uint16_t a = (uint16_t)(g_timeAccumulator * 1.2);
+
+    for (int j = 0; j < NUM_ROWS_CYLINDER; j++)
+    {
+        for (int i = 0; i < NUM_COLS_CYLINDER; i++)
+        {
+            uint16_t index = XY_CYLINDER(i, j);
+            if (index != 256)
+            {
+                // ledBuffer[index].setHue(i * 24 + (sin8(j * 16 + a)) >> 1);
+                byte hue = i * 56 + (a >> 2) + (sin8(j * 16 + a)) >> 1;
+                nblend(ledBuffer[index], ColorFromPalette(gCurrentPalette, hue, 255), 16);
+            }
+        }
+    }
 }
 
 // GPT o1-preview refactor of Swirl with floating-point math
@@ -892,6 +926,22 @@ void colorwaves(CRGB *ledBuffer)
 
 void SoftTwinkles(CRGB *ledBuffer)
 {
+    // I don't know why this works, but for now it does
+    if (_renderBuffer == BUFFER2 && g_buffer1InitNeeded)
+    {
+        // Serial.print("DigitalRain init: ");
+        // initializeRain();
+        g_buffer1InitNeeded = 0;
+        FastLED.clear();
+    }
+    if (_renderBuffer == BUFFER1 && g_buffer2InitNeeded)
+    {
+        // Serial.print("DigitalRain init: ");
+        // initializeRain();
+        g_buffer2InitNeeded = 0;
+        FastLED.clear();
+    }
+
     static const CRGB lightcolor(0, 4, 4);
     static const CRGB darkColor(0, 2, 2);
 
@@ -1177,6 +1227,7 @@ SimplePatternList gPatterns = // this is list of patterns
         DigitalRain,
         cylindrical_Pattern,
         FireComets,
+        Swirl,
         hypnoticWaves,
         testCylinderMapping2,
         DiagonalPattern,
@@ -1194,10 +1245,8 @@ SimplePatternList gPatterns = // this is list of patterns
         pride,
         RGB_Caleidoscope2,
         RGB_Caleidoscope1,
-        Swirl,
         RGB_hiphotic,
         Spiral,
-
         fire2021,
 };
 
@@ -1206,6 +1255,7 @@ const char *patternNames[] = {
     "DigitalRain",
     "cylindrical_Pattern",
     "FireComets",
+    "Swirl",
     "hypnoticWaves",
     "testCylinderMapping2",
     "DiagonalPattern",
@@ -1223,7 +1273,6 @@ const char *patternNames[] = {
     "pride",
     "RGB_Caleidoscope2",
     "RGB_Caleidoscope1",
-    "Swirl",
     "RGB_hiphotic",
     "Spiral",
     "fire2021"};
