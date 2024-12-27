@@ -59,7 +59,7 @@ void GammaCorrection(CRGB *ledBuffer)
 
 // DigitalRain_____________________________________
 
-void changepattern()
+void changeRainPatter()
 {
     int rand1 = random16(NUM_LEDS_PLANAR);
     int rand2 = random16(NUM_LEDS_PLANAR);
@@ -68,16 +68,16 @@ void changepattern()
         rain[rand1] = 0;
         rain[rand2] = 1;
     }
-} // changepattern
+} // changeRainPatter
 
-void raininit()
+void initializeRain()
 { // init array of dots. run once
     for (int i = 0; i < NUM_LEDS_PLANAR; i++)
         rain[i] = 0;
     byte rainNumb = random8(20, 30); // 5..8 how many dots with some random variation
     for (int i = 0; i < rainNumb; i++)
         rain[random16(NUM_LEDS_PLANAR)] = 1;
-} // raininit
+} // initializeRain
 
 void updaterain(CRGB *ledBuffer)
 {
@@ -94,20 +94,35 @@ void updaterain(CRGB *ledBuffer)
         }
     }
 
-    fadeToBlackBy(leds, NUM_LEDS, 70);
+    fadeToBlackBy(ledBuffer, NUM_LEDS, 70);
     speed++;
 } // updaterain
 
 void DigitalRain(CRGB *ledBuffer)
 {
-    if (g_patternInitNeeded)
+    // EVERY_N_SECONDS(1)
+    // {
+    //     Serial.printf("DigitalRain: g_buffer1InitNeeded: %d, g_buffer2InitNeeded: %d\n", g_buffer1InitNeeded, g_buffer2InitNeeded);
+    //     Serial.printf("DigitalRain: ledbuffer: %s\n", ledBuffer == buffer1 ? "buffer1" : "buffer2");
+    // }
+
+    if (ledBuffer == buffer1 && g_buffer1InitNeeded == 1)
     {
-        raininit();
-        g_patternInitNeeded = 0;
-        FastLED.clear();
+        Serial.println("DigitalRain init for BUFFER1");
+        initializeRain();
+        g_buffer1InitNeeded = 0;
+        // FastLED.clear();
     }
+    if (ledBuffer == buffer2 && g_buffer2InitNeeded == 1)
+    {
+        Serial.println("DigitalRain init for Buffer2 ");
+        initializeRain();
+        g_buffer2InitNeeded = 0;
+        // FastLED.clear();
+    }
+
     EVERY_N_MILLISECONDS(80) { updaterain(ledBuffer); }
-    EVERY_N_MILLISECONDS(15) { changepattern(); }
+    EVERY_N_MILLISECONDS(15) { changeRainPatter(); }
 }
 
 void DiagonalPattern(CRGB *ledBuffer)
@@ -269,7 +284,7 @@ void PlasmaBall(CRGB *ledBuffer)
     byte y5 = beatsin8(30 + speed, 0, (NUM_ROWS_PLANAR - 1));
     byte y6 = beatsin8(19 + speed, 0, (NUM_ROWS_PLANAR - 1));
 
-    fadeToBlackBy(leds, NUM_LEDS, 15);
+    fadeToBlackBy(ledBuffer, NUM_LEDS, 15);
 
     mydrawLine_PB(x1, y1, ledBuffer);
     mydrawLine_PB(x2, y2, ledBuffer);
@@ -355,11 +370,6 @@ void toLeds(CRGB *ledBuffer)
 
 void FireComets(CRGB *ledBuffer)
 {
-    if (g_patternInitNeeded)
-    {
-        FastLED.clear();
-        g_patternInitNeeded = 0;
-    }
     balls();
     fadecenter();
     toLeds(ledBuffer);
@@ -410,7 +420,7 @@ void F_lying(CRGB *ledBuffer)
 
     CRGB color = CHSV(hue, 255, 255);
 
-    fadeToBlackBy(leds, NUM_LEDS, 40);
+    fadeToBlackBy(ledBuffer, NUM_LEDS, 40);
 
     mydrawLine_Fl(x1, y1, x2, y2, color, 1, ledBuffer);
     mydrawLine_Fl(x2, y2, x3, y3, color, 1, ledBuffer);
@@ -606,24 +616,58 @@ void DrawOneFrameSprite(uint16_t xspeed, uint16_t yspeed, byte fract, byte *spri
 }
 
 // Swirl_____________________________________
-// FIXME: This animation is a bit janky
 void Swirl(CRGB *ledBuffer)
 {
-    uint16_t a = millis() / 7;
+    uint16_t a = (uint16_t)(g_timeAccumulator * 1.2);
 
     for (int j = 0; j < NUM_ROWS_CYLINDER; j++)
     {
         for (int i = 0; i < NUM_COLS_CYLINDER; i++)
         {
-            uint16_t index = XY_CYLINDER((i + a / 32) % NUM_COLS_CYLINDER, j);
-
-            if (index == g_lastSafeIndex)
-                continue;
-            // ledBuffer[index].setHue(i*54+(a>>2)+(sin8(j*16+a))>>1);
-            byte hue = i * 56 + (a >> 2) + (sin8(j * 16 + a)) >> 1;
-            nblend(ledBuffer[index], ColorFromPalette(gCurrentPalette, hue, 255), 16);
+            uint16_t index = XY_CYLINDER(i, j);
+            if (index != g_lastSafeIndex)
+            {
+                // ledBuffer[index].setHue(i * 24 + (sin8(j * 16 + a)) >> 1);
+                byte hue = i * 56 + (a >> 2) + (sin8(j * 16 + a)) >> 1;
+                nblend(ledBuffer[index], ColorFromPalette(gCurrentPalette, hue, 255), 16);
+            }
         }
-    } // end cycles
+    }
+}
+
+// TODO add to playlist
+void SwirlPlanar(CRGB *ledBuffer)
+{
+
+    uint16_t a = millis() / 6;
+
+    for (int j = 0; j < NUM_ROWS_PLANAR; j++)
+    {
+        for (int i = 0; i < NUM_COLS_PLANAR; i++)
+        {
+            uint16_t index = XY_fibon_PLANAR(i, j);
+            ledBuffer[index].setHue(i * 24 + (sin8(j * 16 + a)) >> 1);
+        }
+    }
+}
+// TODO add to playlist
+void SwirlDuo(CRGB *ledBuffer)
+{
+    uint16_t a = (uint16_t)(g_timeAccumulator * 1.2);
+
+    for (int j = 0; j < NUM_ROWS_CYLINDER; j++)
+    {
+        for (int i = 0; i < NUM_COLS_CYLINDER; i++)
+        {
+            uint16_t index = XY_CYLINDER(i, j);
+            if (index != 256)
+            {
+                // ledBuffer[index].setHue(i * 24 + (sin8(j * 16 + a)) >> 1);
+                byte hue = i * 56 + (a >> 2) + (sin8(j * 16 + a)) >> 1;
+                nblend(ledBuffer[index], ColorFromPalette(gCurrentPalette, hue, 255), 16);
+            }
+        }
+    }
 }
 
 // GPT o1-preview refactor of Swirl with floating-point math
@@ -709,13 +753,6 @@ void Spiral(CRGB *ledBuffer)
 
 void Spiral2(CRGB *ledBuffer)
 {
-    if (g_patternInitNeeded)
-    {
-        raininit();
-        g_patternInitNeeded = 0;
-        FastLED.clear();
-    }
-
     uint16_t a = (uint16_t)(g_timeAccumulator * 1.33); // 8/6 = 1.33
     float scale = sin(a / 32 * PI / 180) * 12;
 
@@ -894,14 +931,27 @@ void colorwaves(CRGB *ledBuffer)
 
 void SoftTwinkles(CRGB *ledBuffer)
 {
-    if (g_patternInitNeeded)
-    {
-        FastLED.clear();
-        g_patternInitNeeded = 0;
-    }
-
     static const CRGB lightcolor(0, 4, 4);
     static const CRGB darkColor(0, 2, 2);
+
+    // EVERY_N_SECONDS(1)
+    // {
+    //     Serial.printf("DigitalRain: g_buffer1InitNeeded: %d, g_buffer2InitNeeded: %d\n", g_buffer1InitNeeded, g_buffer2InitNeeded);
+    //     Serial.printf("DigitalRain: ledbuffer: %s\n", ledBuffer == buffer1 ? "buffer1" : "buffer2");
+    // }
+
+    if (ledBuffer == buffer1 && g_buffer1InitNeeded == 1)
+    {
+        Serial.println("SoftTwinkles init for BUFFER1");
+        fill_solid(ledBuffer, NUM_LEDS, CRGB::Black);
+        g_buffer1InitNeeded = 0;
+    }
+    if (ledBuffer == buffer2 && g_buffer2InitNeeded == 1)
+    {
+        Serial.println("SoftTwinkles init for Buffer2 ");
+        fill_solid(ledBuffer, NUM_LEDS, CRGB::Black);
+        g_buffer2InitNeeded = 0;
+    }
 
     for (int i = 0; i < NUM_LEDS; i++)
     {
@@ -1181,9 +1231,12 @@ void hypnoticWaves(CRGB *ledBuffer)
 // List of patterns to cycle through.  Each is defined as a separate function below.
 SimplePatternList gPatterns = // this is list of patterns
     {
+        DigitalRain,
         SoftTwinkles,
+
         cylindrical_Pattern,
         FireComets,
+        Swirl,
         hypnoticWaves,
         testCylinderMapping2,
         DiagonalPattern,
@@ -1201,17 +1254,17 @@ SimplePatternList gPatterns = // this is list of patterns
         pride,
         RGB_Caleidoscope2,
         RGB_Caleidoscope1,
-        Swirl,
         RGB_hiphotic,
         Spiral,
-        DigitalRain,
         fire2021,
 };
 
 const char *patternNames[] = {
+    "DigitalRain",
     "SoftTwinkles",
     "cylindrical_Pattern",
     "FireComets",
+    "Swirl",
     "hypnoticWaves",
     "testCylinderMapping2",
     "DiagonalPattern",
@@ -1229,10 +1282,8 @@ const char *patternNames[] = {
     "pride",
     "RGB_Caleidoscope2",
     "RGB_Caleidoscope1",
-    "Swirl",
     "RGB_hiphotic",
     "Spiral",
-    "DigitalRain",
     "fire2021"};
 
 const uint8_t gPatternCount = sizeof(patternNames) / sizeof(patternNames[0]);

@@ -47,14 +47,14 @@
 #define DEFAULT_ANIMATION_SPEED 0.08f
 
 // Animation Constants
-#define SECONDS_PER_PALETTE 19
-#define SECONDS_PER_PATTERN 53
+#define SECONDS_PER_PALETTE 10
+#define SECONDS_PER_PATTERN 15
 #define BLEND_SPEED 16
 #define BLEND_INTERVAL_MS 40
 #define CROSSFADE_TIME 4000 // milliseconds
 #define CROSSFADE_STEPS 255 // 255 = max (8 bit)
 
-#define ENCODER_ANIMATION_IDLE_TIMEOUT 5000
+#define ENCODER_ANIMATION_IDLE_TIMEOUT 2000
 
 enum RenderBuffer
 {
@@ -77,8 +77,10 @@ extern const char *patternNames[];
 extern const uint8_t gPatternCount;
 extern uint8_t gBuffer1PatternNumber;
 extern uint8_t gBuffer2PatternNumber;
+extern byte g_buffer1InitNeeded;
+extern byte g_buffer2InitNeeded;
+
 extern CRGB g_statusLed[];
-extern byte g_patternInitNeeded;
 extern uint8_t g_currentBrightness;
 extern CRGB leds[NUM_LEDS];
 extern const char *patternNames[];

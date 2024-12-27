@@ -13,6 +13,12 @@
 // double click change bright in loop 0..maxbright with 7 steps. not affect to Automode
 // long press activate Automode ON
 
+// TODO
+// - Check if if crossfading is already happening before starting a new one
+// - Make a separate task for the 2nd animation buffer
+// - Use array of time values to vary the duration of the patterns
+// - Randomize the patterns.
+
 #include "splendidanew.h"
 #include "encoders.h"
 
@@ -21,13 +27,14 @@ uint8_t g_currentBrightness = 0;
 float g_animationSpeed = DEFAULT_ANIMATION_SPEED;
 float g_timeAccumulator = 0.0f;
 uint8_t gBuffer1PatternNumber = 0;
-uint8_t gBuffer2PatternNumber = 0;
+uint8_t gBuffer2PatternNumber = 1;
 CRGB g_statusLed[1];
-byte g_patternInitNeeded = 1;
+byte g_buffer1InitNeeded = 1; // Don't set explicity
+byte g_buffer2InitNeeded = 1;
 CRGB leds[NUM_LEDS];
 CRGB buffer1[NUM_LEDS + 1];
 CRGB buffer2[NUM_LEDS + 1];
-uint16_t g_lastSafeIndex = 256;
+uint16_t g_lastSafeIndex = 256;                                                   // FIXME change to a #define
 CRGBPalette16 gTargetPalette = gGradientPalettes[random8(gGradientPaletteCount)]; // Choose random palette on start
 RenderBuffer _renderBuffer = BUFFER1;
 
@@ -117,33 +124,6 @@ void runPattern()
   // Pass the LED buffer to the pattern function
 }
 
-void bufferCrossfade()
-{
-  if (_renderBuffer == BUFFER1)
-  {
-    _bufferBlendAmount = _taskBufferCrossfade.getRunCounter();
-  }
-  else
-  {
-    _bufferBlendAmount = CROSSFADE_STEPS - _taskBufferCrossfade.getRunCounter();
-  }
-  Serial.print(".");
-}
-
-void bufferBlendDone()
-{
-  constexpr const char *SGN = "bufferBlendDone()";
-
-  g_patternInitNeeded = 1;
-  _renderBuffer == BUFFER1 ? _renderBuffer = BUFFER2 : _renderBuffer = BUFFER1;
-  _taskBufferCrossfade.setIterations(CROSSFADE_STEPS);
-
-  Serial.println("Done");
-  String buffer = _renderBuffer == BUFFER1 ? "1" : "2";
-  Serial.printf("%s: %s: Rendering to buffer %s\n", timeToString().c_str(), SGN, buffer);
-  printPatternAndPalette();
-}
-
 // Usage example in pattern transition:
 void changePattern()
 {
@@ -159,6 +139,52 @@ void changePattern()
     gBuffer1PatternNumber = (gBuffer2PatternNumber + 1) % gPatternCount;
   }
   _taskBufferCrossfade.enableIfNot();
+}
+
+void bufferCrossfade()
+{
+  if (_taskBufferCrossfade.isFirstIteration())
+  {
+    Serial.println("g_buffer2InitNeeded TRUE");
+
+    // We're running BUFFER1 and going to be crossfading to BUFFER2.
+    // Tell the animation using buffer2 an init is needed.
+    if (_renderBuffer == BUFFER1)
+    {
+      g_buffer2InitNeeded = 1;
+      // Serial.println("g_buffer2InitNeeded TRUE");
+    }
+    // We're running BUFFER2 and going to be crossfading to BUFFER1.
+    // Tell the animation using buffer1 an init is needed.
+    else
+    {
+      g_buffer1InitNeeded = 1;
+      // Serial.println("g_buffer1InitNeeded TRUE");
+    }
+  }
+
+  if (_renderBuffer == BUFFER1)
+  {
+    _bufferBlendAmount = _taskBufferCrossfade.getRunCounter();
+  }
+  else
+  {
+    _bufferBlendAmount = CROSSFADE_STEPS - _taskBufferCrossfade.getRunCounter();
+  }
+  Serial.print(".");
+}
+
+void bufferBlendDone()
+{
+  constexpr const char *SGN = "bufferBlendDone()";
+  // Swap the main re
+  _renderBuffer == BUFFER1 ? _renderBuffer = BUFFER2 : _renderBuffer = BUFFER1;
+  _taskBufferCrossfade.setIterations(CROSSFADE_STEPS); // reset iterations for next run
+
+  Serial.println("Done");
+  String buffer = _renderBuffer == BUFFER1 ? "1" : "2";
+  Serial.printf("%s: %s: Rendering to buffer %s\n", timeToString().c_str(), SGN, buffer);
+  printPatternAndPalette();
 }
 
 void printPatternAndPalette()
