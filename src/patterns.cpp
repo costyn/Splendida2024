@@ -100,17 +100,22 @@ void updaterain(CRGB *ledBuffer)
 
 void DigitalRain(CRGB *ledBuffer)
 {
-    // I don't know why this works, but for now it does
-    if (_renderBuffer == BUFFER2 && g_buffer1InitNeeded)
+    // EVERY_N_SECONDS(1)
+    // {
+    //     Serial.printf("DigitalRain: g_buffer1InitNeeded: %d, g_buffer2InitNeeded: %d\n", g_buffer1InitNeeded, g_buffer2InitNeeded);
+    //     Serial.printf("DigitalRain: ledbuffer: %s\n", ledBuffer == buffer1 ? "buffer1" : "buffer2");
+    // }
+
+    if (ledBuffer == buffer1 && g_buffer1InitNeeded == 1)
     {
-        // Serial.print("DigitalRain init: ");
+        Serial.println("DigitalRain init for BUFFER1");
         initializeRain();
         g_buffer1InitNeeded = 0;
         // FastLED.clear();
     }
-    if (_renderBuffer == BUFFER1 && g_buffer2InitNeeded)
+    if (ledBuffer == buffer2 && g_buffer2InitNeeded == 1)
     {
-        // Serial.print("DigitalRain init: ");
+        Serial.println("DigitalRain init for Buffer2 ");
         initializeRain();
         g_buffer2InitNeeded = 0;
         // FastLED.clear();
@@ -926,24 +931,27 @@ void colorwaves(CRGB *ledBuffer)
 
 void SoftTwinkles(CRGB *ledBuffer)
 {
-    // I don't know why this works, but for now it does
-    if (_renderBuffer == BUFFER2 && g_buffer1InitNeeded)
-    {
-        // Serial.print("DigitalRain init: ");
-        // initializeRain();
-        g_buffer1InitNeeded = 0;
-        FastLED.clear();
-    }
-    if (_renderBuffer == BUFFER1 && g_buffer2InitNeeded)
-    {
-        // Serial.print("DigitalRain init: ");
-        // initializeRain();
-        g_buffer2InitNeeded = 0;
-        FastLED.clear();
-    }
-
     static const CRGB lightcolor(0, 4, 4);
     static const CRGB darkColor(0, 2, 2);
+
+    // EVERY_N_SECONDS(1)
+    // {
+    //     Serial.printf("DigitalRain: g_buffer1InitNeeded: %d, g_buffer2InitNeeded: %d\n", g_buffer1InitNeeded, g_buffer2InitNeeded);
+    //     Serial.printf("DigitalRain: ledbuffer: %s\n", ledBuffer == buffer1 ? "buffer1" : "buffer2");
+    // }
+
+    if (ledBuffer == buffer1 && g_buffer1InitNeeded == 1)
+    {
+        Serial.println("SoftTwinkles init for BUFFER1");
+        fill_solid(ledBuffer, NUM_LEDS, CRGB::Black);
+        g_buffer1InitNeeded = 0;
+    }
+    if (ledBuffer == buffer2 && g_buffer2InitNeeded == 1)
+    {
+        Serial.println("SoftTwinkles init for Buffer2 ");
+        fill_solid(ledBuffer, NUM_LEDS, CRGB::Black);
+        g_buffer2InitNeeded = 0;
+    }
 
     for (int i = 0; i < NUM_LEDS; i++)
     {
@@ -1223,8 +1231,9 @@ void hypnoticWaves(CRGB *ledBuffer)
 // List of patterns to cycle through.  Each is defined as a separate function below.
 SimplePatternList gPatterns = // this is list of patterns
     {
-        SoftTwinkles,
         DigitalRain,
+        SoftTwinkles,
+
         cylindrical_Pattern,
         FireComets,
         Swirl,
@@ -1251,8 +1260,8 @@ SimplePatternList gPatterns = // this is list of patterns
 };
 
 const char *patternNames[] = {
-    "SoftTwinkles",
     "DigitalRain",
+    "SoftTwinkles",
     "cylindrical_Pattern",
     "FireComets",
     "Swirl",

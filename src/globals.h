@@ -47,8 +47,8 @@
 #define DEFAULT_ANIMATION_SPEED 0.08f
 
 // Animation Constants
-#define SECONDS_PER_PALETTE 19
-#define SECONDS_PER_PATTERN 53
+#define SECONDS_PER_PALETTE 10
+#define SECONDS_PER_PATTERN 15
 #define BLEND_SPEED 16
 #define BLEND_INTERVAL_MS 40
 #define CROSSFADE_TIME 4000 // milliseconds
