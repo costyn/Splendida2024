@@ -1,6 +1,18 @@
 #include "patterns.h"
 
+// 90 degree counter clockwise rotated
 uint16_t XY_fibon_PLANAR(byte x, byte y)
+{
+    // newX, newY are the "rotated" coordinates
+    byte newY = (NUM_COLS_PLANAR - 1) - x;
+    byte newX = y;
+
+    uint16_t ledsindex = pgm_read_word(
+        FibonPlanarTable + (newY * NUM_COLS_PLANAR + newX));
+    return ledsindex;
+}
+
+uint16_t XY_fibon_PLANAR_OLD(byte x, byte y)
 {
     uint16_t ledsindex = pgm_read_word(FibonPlanarTable + y * NUM_COLS_PLANAR + x);
     return (ledsindex);

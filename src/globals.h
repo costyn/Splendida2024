@@ -19,7 +19,7 @@
 
 // Atom Matrix M5
 #ifdef M5ATOM
-#define DATA_PIN 33    // set your leds datapin   change to 32 for m5 atom lite
+#define DATA_PIN 22    // set your leds datapin   change to 32 for m5 atom lite
 #define ATOMLED_PIN 21 // set your leds datapin   change to 27 for m5 atom lite
 #endif
 
@@ -47,8 +47,8 @@
 #define DEFAULT_ANIMATION_SPEED 0.08f
 
 // Animation Constants
-#define SECONDS_PER_PALETTE 10
-#define SECONDS_PER_PATTERN 15
+#define SECONDS_PER_PALETTE 19
+#define SECONDS_PER_PATTERN 59
 #define BLEND_SPEED 16
 #define BLEND_INTERVAL_MS 40
 #define CROSSFADE_TIME 4000 // milliseconds

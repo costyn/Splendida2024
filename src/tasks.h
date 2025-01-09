@@ -2,6 +2,8 @@
 #ifndef TASKS_H
 #define TASKS_H
 
+// TaskScheduler really does not like being included more than once.
+#pragma once
 #include <TaskScheduler.h>
 
 extern Scheduler _runner;

@@ -117,12 +117,23 @@ void encoder_onClick(i2cEncoderLibV2 *obj)
     setEncoderState(obj, g_encoderState == BRIGHTNESS ? SPEED : BRIGHTNESS);
 }
 
+// If "automode" is enabled, and you doubleclick, automode is disabled.
+// Re-enable automode by double clicking, it will then also advance to the next pattern.
 void encoder_doubleClick(i2cEncoderLibV2 *obj)
 {
     obj->writeRGBCode(0xFFFFFF); // White
     constexpr const char *SGN = "encoder_doubleClick()";
-    Serial.printf("%s: %s: Initiating change pattern\n", timeToString().c_str(), SGN);
-    changePattern();
+    if (_taskChangePattern.isEnabled())
+    {
+        _taskChangePattern.disable();
+        Serial.printf("%s: %s: Disabling change pattern\n", timeToString().c_str(), SGN);
+    }
+    else
+    {
+        _taskChangePattern.enableIfNot();
+        Serial.printf("%s: %s: Initiating change pattern\n", timeToString().c_str(), SGN);
+        changePattern();
+    }
 }
 
 void setEncoderState(i2cEncoderLibV2 *obj, EncoderState state)

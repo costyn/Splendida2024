@@ -14,9 +14,9 @@ typedef enum
     PRESET,
 } EncoderState;
 
-#define I2C_SDA_PIN 23
-#define I2C_SCL_PIN 19
-#define I2C_INT_PIN 22
+#define I2C_SDA_PIN 33
+#define I2C_SCL_PIN 23
+#define I2C_INT_PIN 19
 
 #define ENCODER_ADDRESS 0x28
 #define ENCODER_MIN 0
@@ -30,6 +30,7 @@ extern uint8_t g_targetBrightness;
 extern float g_animationSpeed;
 extern Task _taskChangeToBrightness;
 extern Task _taskEncoderAnimation;
+extern Task _taskChangePattern;
 extern CRGBPalette16 gCurrentPalette;
 
 // Function Prototypes
