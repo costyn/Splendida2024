@@ -1,0 +1,30 @@
+// A Graphviz diagram with 3 control states, brightness, animation speed
+
+stateDiagram-v2
+    [*] --> Brightness
+    
+    state Brightness {
+        [*] --> AdjustBrightness
+        AdjustBrightness: LED: White (variable intensity)
+        AdjustBrightness: Rotate: Change brightness
+    }
+    
+    state Speed {
+        [*] --> AdjustSpeed
+        AdjustSpeed: LED: Blue (variable intensity)
+        AdjustSpeed: Rotate: Change speed
+    }
+    
+    state Playlist {
+        [*] --> Manual
+        Manual: LED: Blinking Green
+        Manual: Rotate: Next/Prev Preset
+        Auto: LED: Solid Green
+        Auto: Rotate: No effect
+        Manual --> Auto: Double Click
+        Auto --> Manual: Double Click
+    }
+    
+    Brightness --> Speed: Single Click
+    Speed --> Playlist: Single Click
+    Playlist --> Brightness: Single Click

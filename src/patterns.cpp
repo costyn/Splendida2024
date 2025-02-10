@@ -1126,9 +1126,9 @@ void hypnoticWings(CRGB *ledBuffer)
 void hypnoticWaves(CRGB *ledBuffer)
 {
     // Animation parameters
-    const float speedMultiplier = 0.025;         // Speed of the inward movement
-    const float frequency = 1.0;                 // Controls the number of waves
-    const float amplitude = g_currentBrightness; // Half of 255 for brightness calculation
+    const float speedMultiplier = 0.025;                // Speed of the inward movement
+    const float frequency = 1.0;                        // Controls the number of waves
+    const float amplitude = g_currentBrightness * 1.0f; // Half of 255 for brightness calculation
 
     // Time variable for animation
     float time = g_timeAccumulator * speedMultiplier;
@@ -1243,16 +1243,15 @@ void hypnoticWaves(CRGB *ledBuffer)
 // List of patterns to cycle through.  Each is defined as a separate function below.
 SimplePatternList gPatterns = // this is list of patterns
     {
+        hypnoticWings,
+        hypnoticWaves,
         DigitalRain,
         SoftTwinkles,
-
         cylindrical_Pattern,
         FireComets,
         Swirl,
-        hypnoticWaves,
         testCylinderMapping2,
         DiagonalPattern,
-        hypnoticWings,
         spiralCylinderWave,
         // PlasmaBall,
         // F_lying,  // I don't like it enough.
@@ -1272,15 +1271,15 @@ SimplePatternList gPatterns = // this is list of patterns
 };
 
 const char *patternNames[] = {
+    "hypnoticWings",
+    "hypnoticWaves",
     "DigitalRain",
     "SoftTwinkles",
     "cylindrical_Pattern",
     "FireComets",
     "Swirl",
-    "hypnoticWaves",
     "testCylinderMapping2",
     "DiagonalPattern",
-    "hypnoticWings",
     "spiralCylinderWave",
     // "PlasmaBall",
     // "F_lying",

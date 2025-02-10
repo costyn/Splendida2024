@@ -45,3 +45,11 @@ If you want to try making your code for Splendida 256, I have an emulator page f
 
 ### 3D Models 
 LDirko made a nice-looking shell with a diffuser for it. Look for it in the 3d-models subdirectory, or grab it [here](https://www.thingiverse.com/thing:4791860)
+
+### Hardware Roadmap
+* APA102 / APA107 / HD107s / HD108
+* DuraClik connectors https://www.distrelec.nl/en/cable-assembly-duraclik-isl-receptacle-duraclik-isl-receptacle-circuits-300mm-black-molex-218322-1032/p/30232190?itemList=cart
+    https://www.distrelec.nl/en/cable-assembly-duraclik-isl-receptacle-duraclik-isl-receptacle-circuits-150mm-black-molex-218322-1061/p/30232198?pos=5&origPos=1&origPageSize=50&track=true&filterapplied=filter_manufacturerName%3DMolex%26filter_disconnectoratxt_en_ss%3DDuraClik%2520ISL%2520Receptacle%26filter_disconnectorbtxt_en_ss%3DDuraClik%2520ISL%2520Receptacle%26filter_discablelengthnum_en_ds%3D0.15%26filter_discircuitsnum_en_ds%3D6&sid=05fbqd1f49&itemList=category
+
+* SN74AHCT125N on breakout 
+* Replace with M5Stack Stamp ?

@@ -10,7 +10,7 @@
 #include <FastLED.h>
 
 #include "globals.h"
-#include "tasks.h" // Add tasks.h include
+#include "tasks.h"
 #include "tables.h"
 
 typedef PatternFunction SimplePatternList[];

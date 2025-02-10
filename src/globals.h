@@ -48,13 +48,14 @@
 
 // Animation Constants
 #define SECONDS_PER_PALETTE 19
-#define SECONDS_PER_PATTERN 59
+#define SECONDS_PER_PATTERN 123
 #define BLEND_SPEED 16
 #define BLEND_INTERVAL_MS 40
 #define CROSSFADE_TIME 4000 // milliseconds
 #define CROSSFADE_STEPS 255 // 255 = max (8 bit)
 
-#define ENCODER_ANIMATION_IDLE_TIMEOUT 2000
+// Now you can see how long the crossfade is still active
+#define ENCODER_ANIMATION_IDLE_TIMEOUT CROSSFADE_TIME
 
 enum RenderBuffer
 {
