@@ -44,6 +44,7 @@ void RGB_hiphotic(CRGB *buffer);
 void Spiral(CRGB *buffer);
 void DigitalRain(CRGB *buffer);
 void fire2021(CRGB *buffer);
+// void testCylinderMapping3(CRGB *ledBuffer);
 
 void balls();
 void initializeRain();

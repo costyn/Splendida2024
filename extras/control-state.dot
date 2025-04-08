@@ -1,30 +1,44 @@
-// A Graphviz diagram with 3 control states, brightness, animation speed
+digraph ControlStates {
+    // Graph settings
+    rankdir=TB;
+    node [shape=box, style="rounded"];
+    edge [fontsize=10];
 
-stateDiagram-v2
-    [*] --> Brightness
-    
-    state Brightness {
-        [*] --> AdjustBrightness
-        AdjustBrightness: LED: White (variable intensity)
-        AdjustBrightness: Rotate: Change brightness
+      compound=true;
+
+    // Brightness subgraph
+    subgraph cluster_brightness {
+        label="Brightness";
+        style=rounded;
+        color=black;
+        
+        AdjustBrightness [label="AdjustBrightness\nLED: Red\nRotate: Change brightness"];
     }
     
-    state Speed {
-        [*] --> AdjustSpeed
-        AdjustSpeed: LED: Blue (variable intensity)
-        AdjustSpeed: Rotate: Change speed
-    }
+    // Speed subgraph
+    subgraph cluster_speed {
+        label="Speed";
+        style=rounded;
+        color=black;
+        
+        AdjustSpeed [label="AdjustSpeed\nLED: Cyan\nRotate: Change speed\nNote: not all animations\ncan adjust speed!"];
+            }
     
-    state Playlist {
-        [*] --> Manual
-        Manual: LED: Blinking Green
-        Manual: Rotate: Next/Prev Preset
-        Auto: LED: Solid Green
-        Auto: Rotate: No effect
-        Manual --> Auto: Double Click
-        Auto --> Manual: Double Click
+    // Playlist subgraph
+    subgraph cluster_playlist {
+        label="Playlist";
+        style=rounded;
+        color=black;
+        
+        Manual [label="Manual\nLED: Dark Blue\nRotate: Next Preset"];
+        Auto [label="Auto\nLED: White\nRotate: Next Preset"];
+        
+        Manual -> Auto [label="Double Click"];
+        Auto -> Manual [label="Double Click"];
     }
-    
-    Brightness --> Speed: Single Click
-    Speed --> Playlist: Single Click
-    Playlist --> Brightness: Single Click
+
+        // Transitions between main states
+    AdjustBrightness -> AdjustSpeed [label="Single Click"];
+    AdjustSpeed -> Manual [label="Single Click"];
+    Manual -> AdjustBrightness [label="Single Click"];
+}

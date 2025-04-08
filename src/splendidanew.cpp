@@ -28,7 +28,6 @@ float g_animationSpeed = DEFAULT_ANIMATION_SPEED;
 float g_timeAccumulator = 0.0f;
 uint8_t gBuffer1PatternNumber = 0;
 uint8_t gBuffer2PatternNumber = 1;
-CRGB g_statusLed[1];
 byte g_buffer1InitNeeded = 1; // Don't set explicity
 byte g_buffer2InitNeeded = 1;
 CRGB leds[NUM_LEDS];
@@ -119,7 +118,6 @@ void runPattern()
 
   blend(buffer1, buffer2, leds, NUM_LEDS, _bufferBlendAmount);
 
-  g_statusLed[0].fadeToBlackBy(1);
   FastLED.show();
   // Pass the LED buffer to the pattern function
 }
@@ -210,7 +208,6 @@ void initializeSerial()
 void initializeLEDs()
 {
   FastLED.addLeds<LED_TYPE, DATA_PIN, COLOR_ORDER>(leds, NUM_LEDS);
-  FastLED.addLeds<LED_TYPE, ATOMLED_PIN, COLOR_ORDER>(g_statusLed, 1);
   FastLED.setMaxPowerInVoltsAndMilliamps(5, MAX_POWER_MILLIAMPS);
   FastLED.setCorrection(TypicalLEDStrip);
   FastLED.setDither(BINARY_DITHER);
@@ -241,7 +238,6 @@ static void oneClick()
   printPatternAndPalette();
   _taskChangePattern.disable();
   changePattern(); // Change immediately
-  g_statusLed[0].setHue(0);
 }
 
 // TODO
@@ -250,7 +246,6 @@ static void longPress()
   constexpr const char *SGN = "longPress()";
   Serial.printf("%s: %s: Long press! Automode ON\n", timeToString().c_str(), SGN);
   _taskChangePattern.enableIfNot();
-  g_statusLed[0].setHue(100);
 }
 
 boolean changeToTarget(uint8_t target, uint8_t &current)

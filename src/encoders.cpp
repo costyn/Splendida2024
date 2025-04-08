@@ -106,62 +106,94 @@ void encoder_onChange(i2cEncoderLibV2 *obj)
         Serial.printf("%s: Animation Speed: %.2f\n", SGN, g_animationSpeed);
         break;
 
+    case PLAYLIST:
+        setEncoderColor(obj, PLAYLIST);
+        if (increasing)
+        {
+            Serial.printf("%s: Next Pattern\n", SGN);
+            changePattern();
+        }
+        else
+        {
+            Serial.printf("%s: Next Pattern\n", SGN);
+            changePattern();
+        }
+        break;
+
     default:
         break;
     }
 }
 
-// Toggle between BRIGHTNESS and SPEED
+// Toggle between BRIGHTNESS and SPEED and PLAYLIST
 void encoder_onClick(i2cEncoderLibV2 *obj)
 {
-    setEncoderState(obj, g_encoderState == BRIGHTNESS ? SPEED : BRIGHTNESS);
+    EncoderState newEncoderstate;
+    if (g_encoderState == BRIGHTNESS)
+    {
+        newEncoderstate = SPEED;
+    }
+    else if (g_encoderState == SPEED)
+    {
+        newEncoderstate = PLAYLIST;
+    }
+    else if (g_encoderState == PLAYLIST)
+    {
+        newEncoderstate = BRIGHTNESS;
+    }
+    setEncoderState(obj, newEncoderstate);
 }
 
-// If "automode" is enabled, and you doubleclick, automode is disabled.
-// Re-enable automode by double clicking, it will then also advance to the next pattern.
 void encoder_doubleClick(i2cEncoderLibV2 *obj)
 {
-    obj->writeRGBCode(0xFFFFFF); // White
     constexpr const char *SGN = "encoder_doubleClick()";
-    if (_taskChangePattern.isEnabled())
+    if (g_encoderState == PLAYLIST)
     {
-        _taskChangePattern.disable();
-        Serial.printf("%s: %s: Disabling change pattern\n", timeToString().c_str(), SGN);
-    }
-    else
-    {
-        _taskChangePattern.enableIfNot();
-        Serial.printf("%s: %s: Initiating change pattern\n", timeToString().c_str(), SGN);
-        changePattern();
+        if (_taskChangePattern.isEnabled())
+        {
+            obj->writeRGBCode(0x0000FF); // Dark Blue
+            _taskChangePattern.disable();
+            Serial.printf("%s: %s: Disabling change pattern\n", timeToString().c_str(), SGN);
+        }
+        else
+        {
+            obj->writeRGBCode(0xFFFFFF); // White
+            _taskChangePattern.enableIfNot();
+            Serial.printf("%s: %s: Initiating change pattern\n", timeToString().c_str(), SGN);
+        }
     }
 }
 
 void setEncoderState(i2cEncoderLibV2 *obj, EncoderState state)
 {
-    constexpr const char *SGN = "setEncoderState()";
     setEncoderColor(obj, state);
     g_encoderState = state;
-    Serial.printf("%s: %s: EncoderState: %s\n", timeToString().c_str(), SGN, state == BRIGHTNESS ? "BRIGHTNESS" : "SPEED");
 }
 
 void setEncoderColor(i2cEncoderLibV2 *obj, EncoderState state)
 {
-    // constexpr const char *SGN = "setEncoderColor()";
+    constexpr const char *SGN = "setEncoderColor()";
 
     switch (state)
     {
     case BRIGHTNESS:
         obj->writeRGBCode(0xFF0000); // Red
+        Serial.printf("%s: %s: EncoderState: %s\n", timeToString().c_str(), SGN, "BRIGHTNESS");
         break;
     case SPEED:
         obj->writeRGBCode(0x00FFFF); // Cyan
+        Serial.printf("%s: %s: EncoderState: %s\n", timeToString().c_str(), SGN, "SPEED");
+        break;
+    case PLAYLIST:
+        obj->writeRGBCode(0xFFFF00); // Yellow
+        Serial.printf("%s: %s: EncoderState: %s\n", timeToString().c_str(), SGN, "PLAYLIST");
         break;
     }
 }
 void updateEncoderIdleAnimation()
 {
-    // Grab the color from led 0
-    CRGB rgb = leds[128];
+    // Should be the bottom most LED
+    CRGB rgb = leds[12];
 
     // Ensure the max brightness is applied to the encoder LED
     uint8_t maxBrightness = 255;

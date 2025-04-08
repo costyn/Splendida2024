@@ -10,8 +10,7 @@ typedef enum
 {
     BRIGHTNESS,
     SPEED,
-    ROTATION,
-    PRESET,
+    PLAYLIST,
 } EncoderState;
 
 #define I2C_SDA_PIN 33

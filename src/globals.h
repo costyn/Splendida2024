@@ -19,8 +19,7 @@
 
 // Atom Matrix M5
 #ifdef M5ATOM
-#define DATA_PIN 22    // set your leds datapin   change to 32 for m5 atom lite
-#define ATOMLED_PIN 21 // set your leds datapin   change to 27 for m5 atom lite
+#define DATA_PIN 22 // set your leds datapin   change to 32 for m5 atom lite
 #endif
 
 #define LED_TYPE WS2812B // leds type
@@ -28,7 +27,7 @@
 
 #define MAX_POWER_MILLIAMPS 800 // write here your power in milliamps. default i set 800 mA for safety
 #define MIN_BRIGHTNESS 1        // min brightness of leds
-#define MAX_BRIGHTNESS 100      // max brightness of leds - will be limited by max power
+#define MAX_BRIGHTNESS 250      // max brightness of leds - will be limited by max power
 #define BRIGHNESS_STEP 3        // brightness step
 #define DEFAULT_BRIGHTNESS 50   // default brightness
 
@@ -81,7 +80,6 @@ extern uint8_t gBuffer2PatternNumber;
 extern byte g_buffer1InitNeeded;
 extern byte g_buffer2InitNeeded;
 
-extern CRGB g_statusLed[];
 extern uint8_t g_currentBrightness;
 extern CRGB leds[NUM_LEDS];
 extern const char *patternNames[];

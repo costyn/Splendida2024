@@ -1076,6 +1076,35 @@ void testCylinderMapping2(CRGB *ledBuffer)
     GammaCorrection(ledBuffer);
 }
 
+// a new pattern which counts upwards every 200ms to the number of leds and lights each sequentially
+// void testCylinderMapping3(CRGB *ledBuffer)
+// {
+//     static uint32_t lastUpdateTime = 0;
+//     static uint16_t currentLEDNumber = 0;
+
+//     // Check if 200ms have passed
+//     if (millis() - lastUpdateTime >= 500)
+//     {
+//         lastUpdateTime = millis();
+
+//         // Clear all LEDs
+//         FastLED.clear();
+
+//         // Light up the current LED
+//         ledBuffer[currentLEDNumber] = CRGB::Red;
+
+//         // Increment the LED number
+//         currentLEDNumber++;
+//         Serial.println(currentLEDNumber);
+
+//         // Reset the LED number if it exceeds the total number of LEDs
+//         if (currentLEDNumber >= 14)
+//         {
+//             currentLEDNumber = 0;
+//         }
+//     }
+// }
+
 void hypnoticWings(CRGB *ledBuffer)
 {
     // Animation parameters
@@ -1087,8 +1116,8 @@ void hypnoticWings(CRGB *ledBuffer)
     float time = g_timeAccumulator * speedMultiplier;
 
     // Center coordinates
-    float centerX = NUM_COLS_CYLINDER / 1.9;
-    float centerY = NUM_ROWS_CYLINDER / 1.9;
+    float centerX = NUM_COLS_CYLINDER / 0.9;
+    float centerY = NUM_ROWS_CYLINDER / 0.9;
 
     // Loop through cylinder coordinates
     for (uint8_t x = 0; x < NUM_COLS_CYLINDER; x++)
@@ -1128,7 +1157,7 @@ void hypnoticWaves(CRGB *ledBuffer)
     // Animation parameters
     const float speedMultiplier = 0.025;                // Speed of the inward movement
     const float frequency = 1.0;                        // Controls the number of waves
-    const float amplitude = g_currentBrightness * 1.0f; // Half of 255 for brightness calculation
+    const float amplitude = g_currentBrightness * 0.5f; // Half of 255 for brightness calculation
 
     // Time variable for animation
     float time = g_timeAccumulator * speedMultiplier;
@@ -1243,6 +1272,7 @@ void hypnoticWaves(CRGB *ledBuffer)
 // List of patterns to cycle through.  Each is defined as a separate function below.
 SimplePatternList gPatterns = // this is list of patterns
     {
+        // testCylinderMapping3,
         hypnoticWings,
         hypnoticWaves,
         DigitalRain,
@@ -1271,6 +1301,7 @@ SimplePatternList gPatterns = // this is list of patterns
 };
 
 const char *patternNames[] = {
+    // "testCylinderMapping3",
     "hypnoticWings",
     "hypnoticWaves",
     "DigitalRain",
