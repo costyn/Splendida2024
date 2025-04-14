@@ -1,0 +1,44 @@
+digraph ControlStates {
+    // Graph settings
+    rankdir=TB;
+    node [shape=box, style="rounded"];
+    edge [fontsize=10];
+
+      compound=true;
+
+    // Brightness subgraph
+    subgraph cluster_brightness {
+        label="Brightness";
+        style=rounded;
+        color=black;
+        
+        AdjustBrightness [label="AdjustBrightness\nLED: Red\nRotate: Change brightness"];
+    }
+    
+    // Speed subgraph
+    subgraph cluster_speed {
+        label="Speed";
+        style=rounded;
+        color=black;
+        
+        AdjustSpeed [label="AdjustSpeed\nLED: Cyan\nRotate: Change speed\nNote: not all animations\ncan adjust speed!"];
+            }
+    
+    // Playlist subgraph
+    subgraph cluster_playlist {
+        label="Playlist";
+        style=rounded;
+        color=black;
+        
+        Manual [label="Manual\nLED: Dark Blue\nRotate: Next Preset"];
+        Auto [label="Auto\nLED: White\nRotate: Next Preset"];
+        
+        Manual -> Auto [label="Double Click"];
+        Auto -> Manual [label="Double Click"];
+    }
+
+        // Transitions between main states
+    AdjustBrightness -> AdjustSpeed [label="Single Click"];
+    AdjustSpeed -> Manual [label="Single Click"];
+    Manual -> AdjustBrightness [label="Single Click"];
+}

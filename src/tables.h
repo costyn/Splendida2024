@@ -1,6 +1,8 @@
 #ifndef TABLES_H
 #define TABLES_H
 
+#include <Arduino.h>
+
 const uint8_t exp_gamma[256] PROGMEM = {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1,
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,

@@ -1,0 +1,35 @@
+digraph codeviz {
+    splines=true
+    sep="+15,15"
+    overlap=scalexy
+
+    node [shape=Mrecord, fontsize=12]
+
+    node [fillcolor="#ff9999", style=filled] "src/encoders.cpp"            [label = "src/encoders.cpp"]
+    node [fillcolor="#ccccff", style=filled] "src/encoders.h"              [label = "src/encoders.h"]
+    node [fillcolor="#ccccff", style=filled] "src/globals.h"               [label = "src/globals.h"]
+    node [fillcolor="#ff9999", style=filled] "src/palettes.cpp"            [label = "src/palettes.cpp"]
+    node [fillcolor="#ccccff", style=filled] "src/palettes.h"              [label = "src/palettes.h"]
+    node [fillcolor="#ff9999", style=filled] "src/patterns.cpp"            [label = "src/patterns.cpp"]
+    node [fillcolor="#ccccff", style=filled] "src/patterns.h"              [label = "src/patterns.h"]
+    node [fillcolor="#ff9999", style=filled] "src/splendidanew.cpp"        [label = "src/splendidanew.cpp"]
+    node [fillcolor="#ccccff", style=filled] "src/splendidanew.h"          [label = "src/splendidanew.h"]
+    node [fillcolor="#ccccff", style=filled] "src/tables.h"                [label = "src/tables.h"]
+    node [fillcolor="#ccccff", style=filled] "src/tasks.h"                 [label = "src/tasks.h"]
+    node [fillcolor="#ccccff", style=filled] "src/taskscheduler_wrapper.h" [label = "src/taskscheduler_wrapper.h"]
+    node [fillcolor="#ccccff", style=filled] "src/wled_palettes.h"         [label = "src/wled_palettes.h"]
+
+    "src/encoders.cpp"            -> "src/encoders.h"
+    "src/encoders.h"              -> "src/globals.h"
+    "src/palettes.cpp"            -> "src/palettes.h"
+    "src/palettes.h"              -> "src/wled_palettes.h"
+    "src/patterns.cpp"            -> "src/patterns.h"
+    "src/patterns.h"              -> "src/globals.h"
+    "src/patterns.h"              -> "src/tasks.h"
+    "src/patterns.h"              -> "src/tables.h"
+    "src/splendidanew.cpp"        -> "src/splendidanew.h"
+    "src/splendidanew.cpp"        -> "src/encoders.h"
+    "src/splendidanew.h"          -> "src/globals.h"
+    "src/splendidanew.h"          -> "src/tables.h"
+    "src/splendidanew.h"          -> "src/palettes.h"
+}
