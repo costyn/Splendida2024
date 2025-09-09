@@ -5,21 +5,28 @@
 #include <Arduino.h>
 #include <FastLED.h>
 #include <TaskSchedulerDeclarations.h>
-#define M5ATOM
 
-// Emulator
-#ifndef M5ATOM
-#define DATA_PIN 26           // set your leds datapin   change to 32 for m5 atom lite
-#define ATOMLED_PIN 19        // set your leds datapin   change to 27 for m5 atom lite
-#define BUTTON_PIN_INPUT 16   // button pin              change to 39 for m5 atom lite
-#define EXTRA_BUTTON_PIN 22   // button pin              change to 39 for m5 atom lite
-#define BRIGHTNESS_POT_PIN 12 // Brightness potentiometer pin
-#define SPEED_POT_PIN 13      // Speed potentiometer pin
+// // Emulator
+// #ifndef M5ATOM
+// #define DATA_PIN 26           // set your leds datapin   change to 32 for m5 atom lite
+// #define ATOMLED_PIN 19        // set your leds datapin   change to 27 for m5 atom lite
+// #define BUTTON_PIN_INPUT 16   // button pin              change to 39 for m5 atom lite
+// #define EXTRA_BUTTON_PIN 22   // button pin              change to 39 for m5 atom lite
+// #define BRIGHTNESS_POT_PIN 12 // Brightness potentiometer pin
+// #endif
+
+// Can't define DATA_PIN in boards/ header files unfortunately.
+#ifdef M5STACK_ATOM_S3
+#define DATA_PIN 8
 #endif
 
-// Atom Matrix M5
-#ifdef M5ATOM
-#define DATA_PIN 22 // set your leds datapin   change to 32 for m5 atom lite
+#ifdef M5STACK_ATOM
+#define DATA_PIN 32
+#endif
+
+// Default in case the others dont work
+#ifndef DATA_PIN
+#define DATA_PIN 8
 #endif
 
 #define LED_TYPE WS2812B // leds type

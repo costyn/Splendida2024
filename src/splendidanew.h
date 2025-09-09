@@ -13,8 +13,6 @@
 // double click change bright in loop 0..maxbright with 7 steps. not affect to Automode
 // long press activate Automode ON
 
-#define M5ATOM
-
 #include "globals.h"
 // #include "taskscheduler_wrapper.h" // Instead of <TaskScheduler.h>
 #include "tables.h"
