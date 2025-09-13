@@ -4,19 +4,21 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Splendida 2024 is a PlatformIO-based ESP32 firmware project for the Splendida 256 LED matrix. It's a fork of LDirko's colorful LED animation firmware, converted to use PlatformIO for better development workflow. The project creates animated LED patterns on a 16x16 grid of WS2812B LEDs using FastLED library.
+Splendida 2024 is a PlatformIO-based ESP32 firmware project for the Splendida 256 LED fibonacci spiral PCB. It's a fork of LDirko's colorful LED animation firmware, converted to use PlatformIO for better development workflow. The project creates animated LED patterns on a fibonacci spiral of WS2812B LEDs using FastLED library.
+
+User control is through a single Duppa I2C rotary encoder.
 
 ## Development Commands
 
 ### Build and Upload
-- **Build**: `pio run` or `pio run -e m5stack_atommatrix_s3`
-- **Upload**: `pio run -t upload` or `pio run -e m5stack_atommatrix_s3 -t upload`
+- **Build**: `pio run` or `pio run -e m5stack_atomlite_s3`
+- **Upload**: `pio run -t upload` or `pio run -e m5stack_atomlite_s3 -t upload`
 - **Monitor Serial**: `pio device monitor -b 115200`
 - **Clean Build**: `pio run -t clean`
 
 ### Target Environments
-- **m5stack_atommatrix**: Original ESP32 board (pico32)
-- **m5stack_atommatrix_s3**: Default target, M5Stack Atom S3 board
+- **m5stack_atomlite**: M5Stack Atom Lite
+- **m5stack_atomlite_s3**: Default target, M5Stack Atom Lite S3 board
 
 ### Custom Build Targets
 - **Merge Binary**: `pio run -t mergebin` - Creates a single flash image using `merge-bin.py`
@@ -42,7 +44,7 @@ The firmware uses a dual-buffer crossfading system:
   - `_taskChangePalette`: Automatic palette changes every 19 seconds
 
 ### Hardware Configuration
-- **NUM_LEDS**: 256 (16x16 matrix)
+- **NUM_LEDS**: 256 in a Fibonacci spiral
 - **LED_TYPE**: WS2812B with GRB color order
 - **DATA_PIN**: 22 (for M5Atom), configurable per board
 - **Power Limiting**: MAX_POWER_MILLIAMPS = 800mA
@@ -52,15 +54,12 @@ The firmware uses a dual-buffer crossfading system:
 Key libraries used:
 - **FastLED**: LED control and effects
 - **TaskScheduler**: Multi-threaded task management
-- **OneButton**: Button input handling
-- **ArduinoDuPPaLib**: Dual channel encoder support
+- **ArduinoDuPPaLib**: Duppa I2C RGB Rotary Encoder
 - **I2SClocklessLedDriver**: High-speed LED driving
-- **Smooth**: Value smoothing utilities
 
 ### Board Variants
 The project supports multiple hardware configurations:
 - Emulator mode (Wokwi): Different pin assignments
-- M5Atom Matrix: Production hardware with specific pin mappings
 - Board-specific headers in `src/boards/` define pin configurations
 
 ### Pattern Development
@@ -76,6 +75,6 @@ The project includes Wokwi emulator support:
 
 ## File Organization
 - **extras/**: 3D models, diffusers, and documentation
-- **.vscode/**: VS Code configuration for PlatformIO
+- **.vscode/**: VS Code configuration for PlatformIO; ignore this directory
 - **test/**: Test files (if any)
 - **diagram.json**: Wokwi circuit diagram
