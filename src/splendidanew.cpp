@@ -60,7 +60,7 @@ Task _taskEncoderAnimation(25 * TASK_MILLISECOND, TASK_FOREVER, &updateEncoderId
 // Setup function
 void setup()
 {
-
+  delay(500); // power-up delay; let the encoder start up and other stuff settle
   initializeSerial();
   initializeLEDs();
   encoderSetup();
