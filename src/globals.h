@@ -5,31 +5,46 @@
 #include <Arduino.h>
 #include <FastLED.h>
 #include <TaskSchedulerDeclarations.h>
-#define M5ATOM
 
-// Emulator
-#ifndef M5ATOM
-#define DATA_PIN 26           // set your leds datapin   change to 32 for m5 atom lite
-#define ATOMLED_PIN 19        // set your leds datapin   change to 27 for m5 atom lite
-#define BUTTON_PIN_INPUT 16   // button pin              change to 39 for m5 atom lite
-#define EXTRA_BUTTON_PIN 22   // button pin              change to 39 for m5 atom lite
-#define BRIGHTNESS_POT_PIN 12 // Brightness potentiometer pin
-#define SPEED_POT_PIN 13      // Speed potentiometer pin
+// // Emulator
+// #ifndef M5ATOM
+// #define DATA_PIN 26           // set your leds datapin   change to 32 for m5 atom lite
+// #define ATOMLED_PIN 19        // set your leds datapin   change to 27 for m5 atom lite
+// #define BUTTON_PIN_INPUT 16   // button pin              change to 39 for m5 atom lite
+// #define EXTRA_BUTTON_PIN 22   // button pin              change to 39 for m5 atom lite
+// #define BRIGHTNESS_POT_PIN 12 // Brightness potentiometer pin
+// #endif
+
+// Can't define DATA_PIN in boards/ header files unfortunately.
+#ifdef M5STACK_ATOM_S3
+#define DATA_PIN 8
 #endif
 
-// Atom Matrix M5
-#ifdef M5ATOM
-#define DATA_PIN 22 // set your leds datapin   change to 32 for m5 atom lite
+#ifdef M5STACK_ATOM
+#define DATA_PIN 22
+#endif
+
+// Default in case the others dont work
+#ifndef DATA_PIN
+#define DATA_PIN 8
 #endif
 
 #define LED_TYPE WS2812B // leds type
 #define COLOR_ORDER GRB  // color order of leds
 
-#define MAX_POWER_MILLIAMPS 800 // write here your power in milliamps. default i set 800 mA for safety
-#define MIN_BRIGHTNESS 1        // min brightness of leds
-#define MAX_BRIGHTNESS 250      // max brightness of leds - will be limited by max power
-#define BRIGHNESS_STEP 3        // brightness step
-#define DEFAULT_BRIGHTNESS 50   // default brightness
+// Max power in milliamps
+#ifdef M5STACK_ATOM_S3
+#define MAX_POWER_MILLIAMPS 1500
+#endif
+
+#ifdef M5STACK_ATOM
+#define MAX_POWER_MILLIAMPS 800
+#endif
+
+#define MIN_BRIGHTNESS 1      // min brightness of leds
+#define MAX_BRIGHTNESS 250    // max brightness of leds - will be limited by max power
+#define BRIGHNESS_STEP 3      // brightness step
+#define DEFAULT_BRIGHTNESS 50 // default brightness
 
 #define NUM_COLS_PLANAR 20 // resolution of planar lookup table
 #define NUM_ROWS_PLANAR 20 // resolution of planar lookup table

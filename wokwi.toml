@@ -1,4 +1,4 @@
 [wokwi]
 version = 1
-firmware = '.pio/build/m5stack_atommatrix/firmware.bin'
-elf = '.pio/build/m5stack_atommatrix/firmware.elf'
+firmware = '.pio/build/m5stack_atomlite/firmware.bin'
+elf = '.pio/build/m5stack_atomlite/firmware.elf'
