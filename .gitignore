@@ -2,3 +2,4 @@
 .vscode
 .DS_Store
 extras/fixsvg/venv
+__pycache__
