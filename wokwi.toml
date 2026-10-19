@@ -1,3 +1,7 @@
+# Wokwi simulator config (VS Code extension, wokwi-cli, CI). See tools/wokwi/README.md.
+# Build first:  pio run -e m5stack_atommatrix
+# firmware.bin is the app-only image; Wokwi adds its own bootloader and a default partition
+# table, which is fine here (default partitions, no filesystem, no OTA).
 [wokwi]
 version = 1
 firmware = '.pio/build/m5stack_atommatrix/firmware.bin'

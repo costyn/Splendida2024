@@ -1,0 +1,11 @@
+# Boots the lamp and checks that the scheduler keeps running: the boot print comes first,
+# the second one is the first palette change (SECONDS_PER_PALETTE = 19 s of simulated time).
+# Run with:  tools/wokwi/smoke.sh --patterns
+name: 'Uzumaru boots and changes palette'
+version: 1
+author: 'Uzumaru'
+steps:
+  - name: 'Boot: setup() finished'
+    wait-serial: 'printPatternAndPalette(): Pattern:'
+  - name: 'First palette change (about 19 s later)'
+    wait-serial: 'printPatternAndPalette(): Pattern:'

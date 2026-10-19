@@ -1,0 +1,80 @@
+name: Wokwi
+
+# Boots the firmware in the Wokwi cloud simulator and checks the serial output.
+# Needs the repository secret WOKWI_CLI_TOKEN (create one at https://wokwi.com/dashboard/ci,
+# then GitHub: Settings > Secrets and variables > Actions > New repository secret).
+# Without the secret the simulation steps are skipped (the job still builds and passes).
+# See tools/wokwi/README.md.
+
+# Only on main, pull requests and by hand: the free Wokwi plan has 50 simulated minutes a month.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  simulate:
+    runs-on: ubuntu-latest
+    env:
+      WOKWI_CLI_TOKEN: ${{ secrets.WOKWI_CLI_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/cache@v4
+        with:
+          path: ~/.platformio/packages # toolchains only; libraries are re-resolved below
+          key: pio-packages-${{ runner.os }}-${{ github.run_id }}
+          restore-keys: pio-packages-${{ runner.os }}-
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install platformio
+      - run: pio pkg install -e m5stack_atommatrix && pio pkg update -e m5stack_atommatrix
+      - name: Build firmware
+        run: pio run -e m5stack_atommatrix
+      - name: Merge flash image (for uploading to wokwi.com by hand)
+        run: pio run -e m5stack_atommatrix -t mergebin
+        continue-on-error: true
+      - name: Prepare output folder
+        run: mkdir -p .pio/wokwi
+
+      - name: Wokwi token missing, skipping simulation
+        if: env.WOKWI_CLI_TOKEN == ''
+        run: |
+          echo "::notice::WOKWI_CLI_TOKEN secret is not set - simulation skipped. See tools/wokwi/README.md."
+          echo "Simulation skipped: no \`WOKWI_CLI_TOKEN\` secret. See tools/wokwi/README.md." >> "$GITHUB_STEP_SUMMARY"
+
+      # Boots the lamp (about 1 s simulated) and proves setup() finished and printed the
+      # first "Pattern:" line, then runs on to the first palette change (19 s later).
+      - name: Simulate boot and palette change
+        if: env.WOKWI_CLI_TOKEN != ''
+        uses: wokwi/wokwi-ci-action@v1
+        with:
+          token: ${{ secrets.WOKWI_CLI_TOKEN }}
+          path: /
+          timeout: 40000
+          scenario: tools/wokwi/scenarios/patterns.test.yaml
+          fail_text: 'Guru Meditation'
+          serial_log_file: .pio/wokwi/serial.log
+
+      # Best effort: Wokwi's screenshot API is documented for displays only and may not support the
+      # wokwi-splendida LED part. A failure here does not fail the workflow.
+      - name: Try a screenshot of the LEDs
+        if: env.WOKWI_CLI_TOKEN != ''
+        continue-on-error: true
+        uses: wokwi/wokwi-ci-action@v1
+        with:
+          token: ${{ secrets.WOKWI_CLI_TOKEN }}
+          path: /
+          timeout: 5000
+          args: --screenshot-part neopixels --screenshot-time 3000 --screenshot-file .pio/wokwi/screenshot.png
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: wokwi
+          if-no-files-found: ignore
+          path: |
+            .pio/wokwi/serial.log
+            .pio/wokwi/screenshot.png
+            .pio/build/m5stack_atommatrix/firmware-merged.bin
