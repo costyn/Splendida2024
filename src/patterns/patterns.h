@@ -55,4 +55,13 @@ void testCylinderMapping2(CRGB *buffer);
 void hypnoticWings(CRGB *buffer);
 void hypnoticWaves(CRGB *buffer);
 
+// spiral.cpp
+void Uzumaki(CRGB *buffer);
+void Parastichy(CRGB *buffer);
+void Bloom(CRGB *buffer);
+void SeedRunners(CRGB *buffer);
+void Ripples(CRGB *buffer);
+void Vortex(CRGB *buffer);
+void Heartbeat(CRGB *buffer);
+
 #endif

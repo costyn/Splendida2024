@@ -22,6 +22,7 @@
 #include "globals.h"
 #include "palettes.h"
 #include "encoder.h"
+#include "audio.h"
 
 void changeToBrightness();
 void runPattern();
@@ -120,6 +121,7 @@ void runPattern()
     g_timeAccumulator += (double)(currentMillis - lastUpdate) * g_animationSpeed;
     lastUpdate = currentMillis;
   }
+  audioUpdate();
   // Yes, it's a bit inefficient to render both buffers all the time,
   // when most of the time only one is showing, but it's not a big deal
   gPatterns[gBuffer1PatternNumber].render(buffer1);

@@ -4,6 +4,15 @@
 #define PATTERN(fn) {#fn, fn}
 
 const Pattern gPatterns[] = {
+    // Uzumaru patterns (spiral.cpp)
+    PATTERN(Uzumaki),
+    PATTERN(Parastichy),
+    PATTERN(Bloom),
+    PATTERN(SeedRunners),
+    PATTERN(Ripples),
+    PATTERN(Vortex),
+    PATTERN(Heartbeat),
+    // Map-based patterns (ldirko.cpp, mapped.cpp)
     PATTERN(hypnoticWings),
     PATTERN(hypnoticWaves),
     PATTERN(DigitalRain),
