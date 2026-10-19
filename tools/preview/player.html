@@ -1,0 +1,224 @@
+<title>Uzumaru Pattern Preview</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500;700&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Mono:wght@400&display=swap">
+<style>
+  /* Layout: one centred column; the lamp is the hero, pattern chips below it. */
+  :root {
+    --ink: #0b0a0d;        /* room in the dark */
+    --panel: #15131a;      /* lamp housing */
+    --line: #2a2631;
+    --text: #e9e4dc;
+    --muted: #9a93a3;
+    --accent: #f0a35e;     /* warm LED amber */
+    --font-display: "Shippori Mincho", "Hiragino Mincho ProN", Georgia, serif;
+    --font-body: "IBM Plex Sans", system-ui, -apple-system, sans-serif;
+    --font-data: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  body {
+    background: var(--ink);
+    color: var(--text);
+    font: 15px/1.55 var(--font-body);
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    padding-block: 28px 48px;
+  }
+  main { max-width: 640px; margin: 0 auto; display: grid; gap: 22px; }
+  header { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; }
+  h1 { font: 700 32px/1.1 var(--font-display); margin: 0; letter-spacing: 0.02em; text-wrap: balance; }
+  .kanji { font: 500 22px var(--font-display); color: var(--accent); }
+  .lede { color: var(--muted); margin: 0; max-width: 60ch; }
+
+  .stage {
+    position: relative;
+    width: min(100%, 460px);
+    aspect-ratio: 1;
+    max-width: 100%;
+    margin: 0 auto;
+    border-radius: 50%;
+    background: radial-gradient(circle at 50% 50%, #111015 60%, var(--panel) 70%, #0d0c10 71%);
+    box-shadow: 0 0 0 10px var(--panel), 0 0 0 11px var(--line), 0 30px 80px -30px #000;
+    overflow: hidden;
+  }
+  .stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+  #glow { filter: blur(var(--diffuse, 6px)); opacity: 0.95; }
+  #dots { mix-blend-mode: screen; opacity: var(--dots, 0.55); }
+
+  .now { display: grid; gap: 4px; text-align: center; }
+  .now h2 { font: 700 24px/1.2 var(--font-display); margin: 0; }
+  .now p { margin: 0 auto; color: var(--muted); max-width: 52ch; }
+  .meta { font: 12px var(--font-data); color: var(--muted); letter-spacing: 0.04em; }
+
+  .controls { display: flex; gap: 12px; align-items: center; justify-content: center; flex-wrap: wrap; }
+  button, .chip {
+    font: 500 14px var(--font-body);
+    color: var(--text);
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 8px 14px;
+    cursor: pointer;
+  }
+  button:focus-visible, .chip:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .chip[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); }
+  label { display: flex; gap: 8px; align-items: center; color: var(--muted); font-size: 13px; }
+  input[type="range"] { accent-color: var(--accent); width: 120px; }
+
+  section h3 {
+    font: 500 12px var(--font-data);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--muted);
+    margin: 0 0 10px;
+  }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .new .chip { border-color: #4a3a2c; }
+  footer { color: var(--muted); font-size: 13px; border-top: 1px solid var(--line); padding-top: 16px; }
+  footer p { margin: 0 0 8px; max-width: 64ch; }
+  code { font-family: var(--font-data); font-size: 12px; }
+  #error { color: var(--accent); text-align: center; }
+  @media (prefers-reduced-motion: reduce) { #glow { transition: none; } }
+</style>
+
+<main>
+  <header>
+    <h1>Uzumaru</h1><span class="kanji" lang="ja">渦丸</span>
+    <p class="lede">Every pattern on the lamp, rendered by its actual firmware code onto the board's 256 LEDs at their true positions on the Fibonacci spiral.</p>
+  </header>
+
+  <div class="stage" aria-label="Simulated lamp">
+    <canvas id="glow" width="460" height="460"></canvas>
+    <canvas id="dots" width="460" height="460"></canvas>
+  </div>
+
+  <div class="now" aria-live="polite">
+    <h2 id="name">Loading</h2>
+    <p id="desc"></p>
+    <span class="meta" id="meta"></span>
+  </div>
+  <p id="error" hidden></p>
+
+  <div class="controls">
+    <button id="play" type="button">Pause</button>
+    <label for="diffuse">Paper diffuser <input id="diffuse" type="range" min="0" max="14" value="6"></label>
+  </div>
+
+  <section class="new">
+    <h3>New for Uzumaru</h3>
+    <div class="chips" id="chips-new"></div>
+  </section>
+  <section>
+    <h3>From the Splendida firmware</h3>
+    <div class="chips" id="chips-old"></div>
+  </section>
+
+  <footer>
+    <p>Each clip is 10 seconds at the default speed with the Sunset palette, simulated at about 83 frames per second and shown at /*FPS*/28. Colours are converted from LED light to screen brightness, so dim LEDs look roughly as they do on the lamp.</p>
+    <p>Regenerate with <code>tools/preview/build.sh</code> and <code>tools/preview/make_preview.py html</code>.</p>
+  </footer>
+</main>
+
+<script>
+const GEOMETRY = /*GEOMETRY*/null;
+const CLIPS = /*CLIPS*/[];
+const FPS = /*FPS*/28;
+const DESCRIPTIONS = {
+  Uzumaki: "A two-armed spiral that turns and draws you towards the centre. How tightly it winds breathes slowly.",
+  Parastichy: "Light runs round the 21 clockwise arms one way and the 34 counter-clockwise arms the other, taking turns.",
+  Bloom: "A sunflower grows seed by seed in nature's order, flowers, then sheds its seeds from the edge inwards.",
+  SeedRunners: "Comets race outward along the 21 arms and inward along the 34. The 21 arms are also how the board is wired.",
+  Ripples: "Drops fall on a pond and send out rings. With a beatsense board they fall on the beat.",
+  Vortex: "Sparks orbit the centre, the inner ones faster, and spiral down the drain before reappearing at the rim.",
+  Heartbeat: "Each beat sends a ring out through the seeds; the first beat of the bar is brighter. Follows music when it can hear it.",
+};
+const NEW = Object.keys(DESCRIPTIONS);
+const N = 256;
+
+const glow = document.getElementById("glow").getContext("2d");
+const dots = document.getElementById("dots").getContext("2d");
+const lut = Array.from({ length: 256 }, (_, v) => Math.round(255 * Math.pow(v / 255, 1 / 2.2)));
+const decoded = new Map();
+let current = null, frame = 0, playing = true, last = 0;
+
+async function decode(clip) {
+  if (decoded.has(clip.name)) return decoded.get(clip.name);
+  const bytes = Uint8Array.from(atob(clip.data), c => c.charCodeAt(0));
+  const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream("gzip"));
+  const raw = new Uint8Array(await new Response(stream).arrayBuffer());
+  decoded.set(clip.name, raw);
+  return raw;
+}
+
+function draw(raw, f) {
+  const size = glow.canvas.width, pad = size * 0.075, s = (size - 2 * pad) / 255;
+  const off = f * N * 3;
+  glow.clearRect(0, 0, size, size);
+  dots.clearRect(0, 0, size, size);
+  for (let i = 0; i < N; i++) {
+    const r = lut[raw[off + i * 3]], g = lut[raw[off + i * 3 + 1]], b = lut[raw[off + i * 3 + 2]];
+    if (r + g + b === 0) continue;
+    const x = pad + GEOMETRY.x[i] * s, y = pad + GEOMETRY.y[i] * s;
+    const color = `rgb(${r},${g},${b})`;
+    glow.fillStyle = color;
+    glow.beginPath(); glow.arc(x, y, size * 0.018, 0, 6.2832); glow.fill();
+    dots.fillStyle = color;
+    dots.beginPath(); dots.arc(x, y, size * 0.009, 0, 6.2832); dots.fill();
+  }
+}
+
+function tick(t) {
+  if (current && playing && t - last >= 1000 / FPS) {
+    last = t;
+    frame = (frame + 1) % (current.length / (N * 3));
+    draw(current, frame);
+  }
+  requestAnimationFrame(tick);
+}
+
+async function select(name) {
+  const clip = CLIPS.find(c => c.name === name);
+  if (!clip) return;
+  document.querySelectorAll(".chip").forEach(c => c.setAttribute("aria-pressed", c.dataset.name === name));
+  document.getElementById("name").textContent = name;
+  document.getElementById("desc").textContent = DESCRIPTIONS[name] || "Pattern from ldirko's Splendida firmware (or Costyn's, on ldirko's lookup maps).";
+  document.getElementById("meta").textContent = NEW.includes(name) ? "spiral.cpp · exact geometry" : "lookup-map pattern";
+  try {
+    current = await decode(clip);
+    frame = 0;
+    draw(current, 0);
+  } catch (e) {
+    const err = document.getElementById("error");
+    err.hidden = false;
+    err.textContent = "This browser can't unpack the animation data (it needs DecompressionStream). Try a current Safari, Chrome or Firefox.";
+  }
+}
+
+for (const clip of CLIPS) {
+  const chip = document.createElement("button");
+  chip.type = "button";
+  chip.className = "chip";
+  chip.textContent = clip.name;
+  chip.dataset.name = clip.name;
+  chip.addEventListener("click", () => select(clip.name));
+  document.getElementById(NEW.includes(clip.name) ? "chips-new" : "chips-old").append(chip);
+}
+
+document.getElementById("play").addEventListener("click", e => {
+  playing = !playing;
+  e.target.textContent = playing ? "Pause" : "Play";
+});
+const diffuse = document.getElementById("diffuse");
+const applyDiffuse = () => {
+  document.documentElement.style.setProperty("--diffuse", diffuse.value + "px");
+  document.documentElement.style.setProperty("--dots", (0.75 - diffuse.value / 28).toFixed(2));
+};
+diffuse.addEventListener("input", applyDiffuse);
+applyDiffuse();
+
+if (matchMedia("(prefers-reduced-motion: reduce)").matches) playing = false, document.getElementById("play").textContent = "Play";
+select(NEW.find(n => CLIPS.some(c => c.name === n)) || (CLIPS[0] && CLIPS[0].name));
+requestAnimationFrame(tick);
+</script>

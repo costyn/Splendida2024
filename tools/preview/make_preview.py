@@ -1,0 +1,93 @@
+#!/usr/bin/env python3
+"""Render pattern previews from the desktop renderer.
+
+  make_preview.py html OUT.html [pattern ...]    animated HTML player
+  make_preview.py png  OUT.png  pattern [t ...]  still frames (seconds)
+
+Options via environment: PREVIEW_BIN (renderer path), PREVIEW_SECONDS, PALETTE,
+SPEED. LED positions come from src/geometry.h.
+"""
+import base64
+import gzip
+import json
+import os
+import re
+import subprocess
+import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[2]
+BIN = os.environ.get("PREVIEW_BIN", str(ROOT / ".pio" / "preview" / "preview"))
+SECONDS = float(os.environ.get("PREVIEW_SECONDS", "10"))
+PALETTE = os.environ.get("PALETTE", "7")
+SPEED = os.environ.get("SPEED", "0.08")
+FRAME_MS, STRIDE = 12, 3  # simulate ~83 fps, keep every 3rd frame (~28 fps)
+N = 256
+
+
+def geometry():
+    src = (ROOT / "src" / "geometry.h").read_text()
+    def tab(name):
+        body = re.search(r"\b" + name + r"\[NUM_LEDS\][^{]*\{(.*?)\};", src, re.S).group(1)
+        return [int(v) for v in re.findall(r"\d+", body)]
+    return tab("ledX"), tab("ledY")
+
+
+def render(pattern, seconds=SECONDS):
+    raw = subprocess.run(
+        [BIN, pattern, str(seconds), PALETTE, str(FRAME_MS), str(STRIDE), SPEED],
+        check=True, capture_output=True).stdout
+    return raw
+
+
+def patterns():
+    out = subprocess.run([BIN, "--list"], check=True, capture_output=True, text=True).stdout
+    return [l for l in out.splitlines() if l and not l.startswith("#")]
+
+
+def to_display(v):
+    # LEDs emit linear light; screens expect sRGB. Approximate the look.
+    return int(round(255 * (v / 255) ** (1 / 2.2)))
+
+
+def png(out, pattern, times):
+    from PIL import Image, ImageDraw, ImageFilter
+    xs, ys = geometry()
+    raw = render(pattern, max(times) + 0.1)
+    size, pad = 360, 20
+    sheet = Image.new("RGB", (size * len(times), size), (8, 8, 10))
+    lut = [to_display(v) for v in range(256)]
+    for k, t in enumerate(times):
+        f = int(t * 1000 / FRAME_MS / STRIDE)
+        frame = raw[f * N * 3:(f + 1) * N * 3]
+        img = Image.new("RGB", (size, size), (8, 8, 10))
+        d = ImageDraw.Draw(img)
+        s = (size - 2 * pad) / 255
+        for i in range(N):
+            r, g, b = (lut[c] for c in frame[i * 3:i * 3 + 3])
+            cx, cy = pad + xs[i] * s, pad + ys[i] * s
+            d.ellipse([cx - 9, cy - 9, cx + 9, cy + 9], fill=(r, g, b))
+        sheet.paste(img.filter(ImageFilter.GaussianBlur(1.2)), (k * size, 0))
+    sheet.save(out)
+
+
+def html(out, names):
+    xs, ys = geometry()
+    clips = []
+    for name in names:
+        raw = render(name)
+        clips.append({"name": name, "data": base64.b64encode(gzip.compress(raw, 9)).decode()})
+        print(f"{name}: {len(raw) // (N * 3)} frames", file=sys.stderr)
+    template = (Path(__file__).parent / "player.html").read_text()
+    page = template.replace("/*GEOMETRY*/null", json.dumps({"x": xs, "y": ys})) \
+                   .replace("/*CLIPS*/[]", json.dumps(clips)) \
+                   .replace("/*FPS*/28", str(round(1000 / (FRAME_MS * STRIDE))))
+    Path(out).write_text(page)
+
+
+if __name__ == "__main__":
+    mode, out, *rest = sys.argv[1:]
+    if mode == "png":
+        png(out, rest[0], [float(t) for t in rest[1:]] or [1, 3, 5])
+    else:
+        html(out, rest or patterns())

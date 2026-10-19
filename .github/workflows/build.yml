@@ -1,0 +1,39 @@
+name: Build
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  firmware:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.platformio
+            .pio/libdeps
+          key: pio-${{ hashFiles('platformio.ini') }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install platformio
+      - name: Build firmware
+        run: pio run -e m5stack_atommatrix
+      - name: Build with beatsense enabled
+        run: PLATFORMIO_BUILD_FLAGS=-DUZUMARU_BEATSENSE pio run -e m5stack_atommatrix
+      - name: Geometry table is up to date
+        run: python3 tools/gen_geometry.py > /tmp/geometry.h && diff -u src/geometry.h /tmp/geometry.h
+      - name: Render every pattern on the desktop
+        run: |
+          tools/preview/build.sh
+          for p in $(.pio/preview/preview --list | grep -v '#'); do
+            .pio/preview/preview "$p" 2 7 12 10 > /dev/null
+          done
+      - uses: actions/upload-artifact@v4
+        with:
+          name: firmware
+          path: |
+            .pio/build/m5stack_atommatrix/firmware.bin
+            .pio/build/m5stack_atommatrix/firmware.elf
