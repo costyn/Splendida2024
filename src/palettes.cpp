@@ -1,4 +1,5 @@
 #include "palettes.h"
+#include "wled_palettes.h"
 
 uint8_t gCurrentPaletteNumber = 0;
 CRGBPalette16 gCurrentPalette(CRGB::Black);
@@ -171,7 +172,7 @@ const TProgmemRGBGradientPaletteRef gGradientPalettes[] = {
     candy2_gp                    // 70-57 Candy2
 };
 
-// In palettes.h - Add WLED palette names
+// Names for the palettes above, in the same order (printed on the serial console)
 const char *paletteNames[] = {
     "Coral_reef_gp",
     "es_ocean_breeze_068_gp",

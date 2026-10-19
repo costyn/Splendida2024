@@ -7,7 +7,6 @@
 //   1,494 bytes total for all 34 color palettes and associated code.
 
 #include <FastLED.h>
-#include <wled_palettes.h>
 
 extern const TProgmemRGBGradientPaletteRef gGradientPalettes[];
 

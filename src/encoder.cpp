@@ -1,4 +1,4 @@
-#include "encoders.h"
+#include "encoder.h"
 
 /*
     encoderSetup
@@ -7,15 +7,20 @@
 */
 
 static i2cEncoderLibV2 RGBEncoder = i2cEncoderLibV2(ENCODER_ADDRESS);
-extern EncoderState g_encoderState;
 
 EncoderState g_encoderState = BRIGHTNESS; // default state
+
+static void encoder_onChange(i2cEncoderLibV2 *obj);
+static void encoder_onClick(i2cEncoderLibV2 *obj);
+static void encoder_doubleClick(i2cEncoderLibV2 *obj);
+static void setEncoderState(i2cEncoderLibV2 *obj, EncoderState state);
+static void setEncoderColor(i2cEncoderLibV2 *obj, EncoderState state);
 
 void encoderSetup()
 {
     Wire.begin(I2C_SDA_PIN, I2C_SCL_PIN); // Initialize I2C with custom pins
 
-    pinMode(I2C_INT_PIN, INPUT);
+    pinMode(I2C_INT_PIN, INPUT_PULLUP); // INT is open-drain; stay idle if no encoder is attached
 
     RGBEncoder.reset();
 
@@ -27,7 +32,7 @@ void encoderSetup()
         i2cEncoderLibV2::RMOD_X1 |
         i2cEncoderLibV2::RGB_ENCODER);
     RGBEncoder.id = 0;                      // do we need this?
-    RGBEncoder.writeAntibouncingPeriod(10); // 250ms of debouncing
+    RGBEncoder.writeAntibouncingPeriod(10); // x 0.192ms = ~2ms of debouncing
     RGBEncoder.writeDoublePushPeriod(50);   // Set the double push period to 500ms
 
     setEncoderState(&RGBEncoder, BRIGHTNESS); // Initial state
@@ -55,10 +60,15 @@ void readEncoder()
     }
 }
 
-void encoder_onChange(i2cEncoderLibV2 *obj)
+static void encoder_onChange(i2cEncoderLibV2 *obj)
 {
     constexpr const char *SGN = "encoder_onChange()";
     bool increasing = obj->readStatus(i2cEncoderLibV2::RINC);
+
+    // Only the direction matters. Re-centre the counter, otherwise it eventually
+    // sticks at ENCODER_MIN/MAX (wrap is disabled) and turning that way stops
+    // generating events.
+    obj->writeCounter((int32_t)ENCODER_DEFAULT);
 
     switch (g_encoderState)
     {
@@ -97,11 +107,11 @@ void encoder_onChange(i2cEncoderLibV2 *obj)
         setEncoderColor(obj, SPEED);
         if (increasing)
         {
-            g_animationSpeed = min(0.4f, g_animationSpeed + 0.01f);
+            g_animationSpeed = min(MAX_ANIMATION_SPEED, g_animationSpeed + ANIMATION_SPEED_STEP);
         }
         else
         {
-            g_animationSpeed = max(-0.4f, g_animationSpeed - 0.01f);
+            g_animationSpeed = max(MIN_ANIMATION_SPEED, g_animationSpeed - ANIMATION_SPEED_STEP);
         }
         Serial.printf("%s: Animation Speed: %.2f\n", SGN, g_animationSpeed);
         break;
@@ -111,12 +121,12 @@ void encoder_onChange(i2cEncoderLibV2 *obj)
         if (increasing)
         {
             Serial.printf("%s: Next Pattern\n", SGN);
-            changePattern();
+            changePattern(1);
         }
         else
         {
-            Serial.printf("%s: Next Pattern\n", SGN);
-            changePattern();
+            Serial.printf("%s: Previous Pattern\n", SGN);
+            changePattern(-1);
         }
         break;
 
@@ -126,9 +136,9 @@ void encoder_onChange(i2cEncoderLibV2 *obj)
 }
 
 // Toggle between BRIGHTNESS and SPEED and PLAYLIST
-void encoder_onClick(i2cEncoderLibV2 *obj)
+static void encoder_onClick(i2cEncoderLibV2 *obj)
 {
-    EncoderState newEncoderstate;
+    EncoderState newEncoderstate = BRIGHTNESS;
     if (g_encoderState == BRIGHTNESS)
     {
         newEncoderstate = SPEED;
@@ -144,7 +154,7 @@ void encoder_onClick(i2cEncoderLibV2 *obj)
     setEncoderState(obj, newEncoderstate);
 }
 
-void encoder_doubleClick(i2cEncoderLibV2 *obj)
+static void encoder_doubleClick(i2cEncoderLibV2 *obj)
 {
     constexpr const char *SGN = "encoder_doubleClick()";
     if (g_encoderState == PLAYLIST)
@@ -164,13 +174,13 @@ void encoder_doubleClick(i2cEncoderLibV2 *obj)
     }
 }
 
-void setEncoderState(i2cEncoderLibV2 *obj, EncoderState state)
+static void setEncoderState(i2cEncoderLibV2 *obj, EncoderState state)
 {
     setEncoderColor(obj, state);
     g_encoderState = state;
 }
 
-void setEncoderColor(i2cEncoderLibV2 *obj, EncoderState state)
+static void setEncoderColor(i2cEncoderLibV2 *obj, EncoderState state)
 {
     constexpr const char *SGN = "setEncoderColor()";
 
@@ -192,17 +202,7 @@ void setEncoderColor(i2cEncoderLibV2 *obj, EncoderState state)
 }
 void updateEncoderIdleAnimation()
 {
-    // Should be the bottom most LED
+    // Mirror one of the bottom-most LEDs (next to the knob) on the encoder LED
     CRGB rgb = leds[12];
-
-    // Ensure the max brightness is applied to the encoder LED
-    uint8_t maxBrightness = 255;
-    uint8_t r = map(rgb.r, 0, 255, 0, maxBrightness);
-    uint8_t g = map(rgb.g, 0, 255, 0, maxBrightness);
-    uint8_t b = map(rgb.b, 0, 255, 0, maxBrightness);
-
-    // Update encoder LED
-    RGBEncoder.writeLEDR(r);
-    RGBEncoder.writeLEDG(g);
-    RGBEncoder.writeLEDB(b);
+    RGBEncoder.writeRGBCode(((uint32_t)rgb.r << 16) | ((uint32_t)rgb.g << 8) | rgb.b);
 }

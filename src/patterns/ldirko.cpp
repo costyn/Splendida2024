@@ -1,77 +1,28 @@
+// Patterns from ldirko's "New Colorful Splendida 256" firmware
+// https://github.com/ldirko/New-Colorful-Splendida-256-firmware-
+// Yaroslaw Turbin (ldirko), 2021 - GPL-3.0
+// https://vk.com/ldirko
+// https://www.reddit.com/user/ldirko/
+// https://twitter.com/ldir_ko
+//
+// pride() and colorwaves() are by Mark Kriegsman (FastLED examples).
+//
+// Modified by Costyn van Dongen 2024-2025: render into a caller-supplied buffer
+// (for crossfading) and use g_timeAccumulator instead of millis() so the
+// encoder can change the speed. The original millis() divisors map onto
+// g_timeAccumulator (at default speed) as: millis()/8 -> 1.0x, /6 -> 1.33x,
+// /3 -> 2.67x, /24 -> 0.333x, millis() -> 8x.
+
 #include "patterns.h"
 
-// 90 degree counter clockwise rotated
-uint16_t XY_fibon_PLANAR(byte x, byte y)
-{
-    // newX, newY are the "rotated" coordinates
-    byte newY = (NUM_COLS_PLANAR - 1) - x;
-    byte newX = y;
-
-    uint16_t ledsindex = pgm_read_word(
-        FibonPlanarTable + (newY * NUM_COLS_PLANAR + newX));
-    return ledsindex;
-}
-
-uint16_t XY_fibon_PLANAR_OLD(byte x, byte y)
-{
-    uint16_t ledsindex = pgm_read_word(FibonPlanarTable + y * NUM_COLS_PLANAR + x);
-    return (ledsindex);
-}
-
-uint16_t XY_CYLINDER(byte x, byte y)
-{ // calculate index in leds from XY coordinates for cylindrical mapping
-    uint16_t ledsindex = pgm_read_word(FibonCilindrTable + y * NUM_COLS_CYLINDER + x);
-    return (ledsindex);
-}
-
-void GammaCorrection(CRGB *ledBuffer)
-{ // gamma correction function
-    byte r, g, b;
-    for (uint16_t i = 0; i < NUM_LEDS; i++)
-    {
-        r = ledBuffer[i].r;
-        g = ledBuffer[i].g;
-        b = ledBuffer[i].b;
-        ledBuffer[i].r = pgm_read_byte(exp_gamma + r);
-        ledBuffer[i].g = pgm_read_byte(exp_gamma + g);
-        ledBuffer[i].b = pgm_read_byte(exp_gamma + b);
-    }
-}
-
-// Original -> g_timeAccumulator conversion:
-
-// millis() / 3 (faster)
-// uint16_t a = (uint16_t)(g_timeAccumulator * 2.67);  // 8/3 = 2.67
-
-// // millis() / 7 (slightly faster)
-// uint16_t a = (uint16_t)(g_timeAccumulator * 1.14);  // 8/7 = 1.14
-
-// // millis() / 12 (slower)
-// uint16_t a = (uint16_t)(g_timeAccumulator * 0.67);  // 8/12 = 0.67
-
-// // straight millis()
-// uint16_t ms = (uint16_t)(g_timeAccumulator * 8.0);  // Multiply by 8 to get back to original speed
-
-// // Standardized replacements:
-// // For /6 (faster):
-// uint16_t a = (uint16_t)(g_timeAccumulator * 1.33); // 8/6 = 1.33
-
-// // For /8 (standard):
-// uint16_t a = (uint16_t)g_timeAccumulator;
-
-// // For >>3 (same as /8):
-// uint16_t a = (uint16_t)g_timeAccumulator;
-
-// Original: millis() / 24 (slower than standard /8)
-// Factor: 8/24 = 0.333 (one-third speed)
-
-// uint16_t a = (uint16_t)(g_timeAccumulator * 0.333);
+static byte rain[NUM_LEDS_PLANAR];                                   // DigitalRain dots
+static byte cometHeat[(NUM_COLS_PLANAR + 2) * (NUM_ROWS_PLANAR + 2)]; // FireComets heat map
 
 //_________________________ planar map patterns
 
 // DigitalRain_____________________________________
 
-void changeRainPatter()
+static void changeRainPatter()
 {
     int rand1 = random16(NUM_LEDS_PLANAR);
     int rand2 = random16(NUM_LEDS_PLANAR);
@@ -82,7 +33,7 @@ void changeRainPatter()
     }
 } // changeRainPatter
 
-void initializeRain()
+static void initializeRain()
 { // init array of dots. run once
     for (int i = 0; i < NUM_LEDS_PLANAR; i++)
         rain[i] = 0;
@@ -91,7 +42,7 @@ void initializeRain()
         rain[random16(NUM_LEDS_PLANAR)] = 1;
 } // initializeRain
 
-void updaterain(CRGB *ledBuffer)
+static void updaterain(CRGB *ledBuffer)
 {
     static int speed = 1;
 
@@ -112,25 +63,9 @@ void updaterain(CRGB *ledBuffer)
 
 void DigitalRain(CRGB *ledBuffer)
 {
-    // EVERY_N_SECONDS(1)
-    // {
-    //     Serial.printf("DigitalRain: g_buffer1InitNeeded: %d, g_buffer2InitNeeded: %d\n", g_buffer1InitNeeded, g_buffer2InitNeeded);
-    //     Serial.printf("DigitalRain: ledbuffer: %s\n", ledBuffer == buffer1 ? "buffer1" : "buffer2");
-    // }
-
-    if (ledBuffer == buffer1 && g_buffer1InitNeeded == 1)
+    if (patternNeedsInit(ledBuffer))
     {
-        Serial.println("DigitalRain init for BUFFER1");
         initializeRain();
-        g_buffer1InitNeeded = 0;
-        // FastLED.clear();
-    }
-    if (ledBuffer == buffer2 && g_buffer2InitNeeded == 1)
-    {
-        Serial.println("DigitalRain init for Buffer2 ");
-        initializeRain();
-        g_buffer2InitNeeded = 0;
-        // FastLED.clear();
     }
 
     EVERY_N_MILLISECONDS(80) { updaterain(ledBuffer); }
@@ -140,7 +75,7 @@ void DigitalRain(CRGB *ledBuffer)
 void DiagonalPattern(CRGB *ledBuffer)
 {
     // Get rotation angle from time
-    float angle = g_timeAccumulator * 0.001; // Adjust speed multiplier as needed
+    float angle = fmod(g_timeAccumulator * 0.001, 2 * PI); // Adjust speed multiplier as needed
     float centerX = NUM_COLS_PLANAR / 2.0;
     float centerY = NUM_ROWS_PLANAR / 2.0;
 
@@ -165,7 +100,7 @@ void DiagonalPattern(CRGB *ledBuffer)
 
             // Use rotated coordinates for color calculation
             CRGB newcolor = ColorFromPalette(gCurrentPalette,
-                                             ((uint8_t)rotX << 3) + ((uint8_t)rotY << 3) + (int)g_timeAccumulator, 255);
+                                             ((uint8_t)rotX << 3) + ((uint8_t)rotY << 3) + animTime16(1), 255);
             ledBuffer[ledsindex] = newcolor;
         }
     }
@@ -198,7 +133,7 @@ void Distortion_Waves_planar(CRGB *ledBuffer)
     byte speed = 5;
     uint8_t scale = 2;
 
-    uint16_t a = (uint16_t)(g_timeAccumulator * 0.333);
+    uint16_t a = animTime16(0.333);
     uint16_t a2 = a / 2;
     uint16_t a3 = a / 3;
 
@@ -244,7 +179,7 @@ void Distortion_Waves_planar(CRGB *ledBuffer)
 
 void RGB_hiphotic(CRGB *ledBuffer)
 {
-    uint16_t a = (uint16_t)(g_timeAccumulator * 1.33);
+    uint16_t a = animTime16(1.33);
     for (int x = 0; x < NUM_COLS_PLANAR; x++)
     {
         for (int y = 0; y < NUM_ROWS_PLANAR; y++)
@@ -260,7 +195,7 @@ void RGB_hiphotic(CRGB *ledBuffer)
 
 // PlasmaBall_____________________________________
 
-void mydrawLine_PB(byte x1, byte y1, CRGB *ledBuffer)
+static void mydrawLine_PB(byte x1, byte y1, CRGB *ledBuffer)
 { // draw line frim center
     CRGB color;
     byte xsteps = abs8(NUM_COLS_PLANAR / 2 - x1) + 1;
@@ -317,30 +252,30 @@ DEFINE_GRADIENT_PALETTE(firepal){
     255, 255, 255, 255, // white
 };
 
-uint16_t buffXY(byte x, byte y)
+static uint16_t buffXY(byte x, byte y)
 {
     return (y * (NUM_COLS_PLANAR + 2) + x);
 }
 
-void fadecenter()
+static void fadecenter()
 {
     uint16_t sum;
     for (byte x = 1; x < NUM_COLS_PLANAR + 1; x++)
     {
         for (byte y = 1; y < NUM_ROWS_PLANAR + 1; y++)
         {
-            sum = rain[buffXY(x, y)];
-            sum += rain[buffXY(x + 1, y)];
-            sum += rain[buffXY(x - 1, y)];
-            sum += rain[buffXY(x, y + 1)];
-            sum += rain[buffXY(x, y - 1)];
+            sum = cometHeat[buffXY(x, y)];
+            sum += cometHeat[buffXY(x + 1, y)];
+            sum += cometHeat[buffXY(x - 1, y)];
+            sum += cometHeat[buffXY(x, y + 1)];
+            sum += cometHeat[buffXY(x, y - 1)];
             sum /= 5;
-            rain[buffXY(x, y)] = sum;
+            cometHeat[buffXY(x, y)] = sum;
         }
     }
 }
 
-void balls()
+static void balls()
 {
     uint8_t speed = (int)fmap(g_animationSpeed, MIN_ANIMATION_SPEED, MAX_ANIMATION_SPEED, 0, 20);
     // byte speed = 10;
@@ -353,15 +288,15 @@ void balls()
     byte x2 = beatsin8(15 + speed, 2, NUM_COLS_PLANAR - 2);
     byte y2 = beatsin8(11 + speed, 2, NUM_ROWS_PLANAR - 1);
 
-    rain[buffXY(x, y)] = bright;
-    rain[buffXY(x + 1, y)] = bright;
-    rain[buffXY(x1, y1)] = bright;
-    rain[buffXY(x1 + 1, y1)] = bright;
-    rain[buffXY(x2, y2)] = bright;
-    rain[buffXY(x2 + 1, y2)] = bright;
+    cometHeat[buffXY(x, y)] = bright;
+    cometHeat[buffXY(x + 1, y)] = bright;
+    cometHeat[buffXY(x1, y1)] = bright;
+    cometHeat[buffXY(x1 + 1, y1)] = bright;
+    cometHeat[buffXY(x2, y2)] = bright;
+    cometHeat[buffXY(x2 + 1, y2)] = bright;
 }
 
-void toLeds(CRGB *ledBuffer)
+static void toLeds(CRGB *ledBuffer)
 {
     CRGBPalette256 myPal = firepal;
 
@@ -371,7 +306,7 @@ void toLeds(CRGB *ledBuffer)
         for (int x = 0; x < NUM_COLS_PLANAR; x++)
         {
             int index = XY_fibon_PLANAR(x, (NUM_ROWS_PLANAR - 1) - y);
-            CRGB color = ColorFromPalette(myPal, rain[buffIndex], 255);
+            CRGB color = ColorFromPalette(myPal, cometHeat[buffIndex], 255);
             nblend(ledBuffer[index], color, 16);
             // ledBuffer[index] = color;
             buffIndex++;
@@ -389,7 +324,7 @@ void FireComets(CRGB *ledBuffer)
 
 // F_lying_____________________________________
 
-void mydrawLine_Fl(byte x, byte y, byte x1, byte y1, CRGB color, bool dot, CRGB *ledBuffer)
+static void mydrawLine_Fl(byte x, byte y, byte x1, byte y1, CRGB color, bool dot, CRGB *ledBuffer)
 { // my ugly line draw function )))
 
     byte xsteps = abs8(x - x1) + 1;
@@ -444,7 +379,7 @@ void F_lying(CRGB *ledBuffer)
 
 // RGBTunnel_____________________________________
 
-byte code(int x, int y, int t)
+static byte code(int x, int y, int t)
 {                                                                                                                  // put your formula here
     uint16_t outputcode = sqrt16((x -= sin8(x + t / 3) >> 4) * x + (y -= cos8(y + t >> 1) >> 4) * y) * 24 - t * 2; // moving tunnel variation
     return outputcode;
@@ -452,7 +387,7 @@ byte code(int x, int y, int t)
 
 void RGBTunnel(CRGB *ledBuffer)
 {
-    uint16_t t = (uint16_t)(g_timeAccumulator * 0.8);
+    uint16_t t = animTime16(0.8);
 
     for (byte y = 0; y < NUM_ROWS_PLANAR; y++)
     {
@@ -474,7 +409,7 @@ void RGBTunnel(CRGB *ledBuffer)
 
 void RGB_Caleidoscope1(CRGB *ledBuffer)
 {
-    uint16_t a = (uint16_t)g_timeAccumulator;
+    uint16_t a = animTime16(1);
 
     for (int j = 0; j < NUM_ROWS_CYLINDER; j++)
     {
@@ -497,7 +432,7 @@ void RGB_Caleidoscope1(CRGB *ledBuffer)
 
 void RGB_Caleidoscope2(CRGB *ledBuffer)
 {
-    uint16_t a = (uint16_t)g_timeAccumulator;
+    uint16_t a = animTime16(1);
 
     for (int j = 0; j < NUM_ROWS_CYLINDER; j++)
     {
@@ -524,7 +459,7 @@ void Distortion_Waves_cylinder(CRGB *ledBuffer)
     uint8_t w = 2;
     uint8_t scale = 2;
 
-    uint16_t a = (uint16_t)(g_timeAccumulator * 0.333);
+    uint16_t a = animTime16(0.333);
     uint16_t a2 = a / 2;
     uint16_t a3 = a / 3;
 
@@ -578,7 +513,7 @@ void Distortion_Waves_cylinder(CRGB *ledBuffer)
 
 void FireButterfly(CRGB *ledBuffer)
 {
-    uint16_t a = (uint16_t)(g_timeAccumulator * 2.67); // 8/3 = 2.67
+    uint16_t a = animTime16(2.67); // 8/3 = 2.67
 
     for (int j = 0; j < NUM_ROWS_CYLINDER; j++)
     {
@@ -593,44 +528,10 @@ void FireButterfly(CRGB *ledBuffer)
     }
 }
 
-// Sprite_Scroll_____________________________________
-
-void DrawOneFrameSprite(uint16_t xspeed, uint16_t yspeed, byte fract, byte *sprite, byte spr_cols, byte spr_rows, CRGB *ledBuffer)
-{
-    CRGB color;
-
-    uint16_t indextable = 0;
-    uint16_t colsX3 = (spr_cols << 1) + spr_cols; //*3
-
-    for (byte j = 0; j < NUM_ROWS_CYLINDER; j++)
-    {
-        uint16_t yoffs = ((j + yspeed) % spr_rows) * colsX3;
-
-        for (byte i = 0; i < NUM_COLS_CYLINDER; i++)
-        {
-            uint16_t index = XY_CYLINDER(i, j);
-
-            if (index == g_lastSafeIndex)
-                continue;
-
-            uint16_t xoffs = (i + xspeed) % spr_cols;
-            xoffs = (xoffs << 1) + xoffs; //*3
-
-            byte *SpriteAdr = sprite + yoffs + xoffs;
-
-            color.r = pgm_read_byte(SpriteAdr);
-            color.g = pgm_read_byte(++SpriteAdr);
-            color.b = pgm_read_byte(++SpriteAdr);
-
-            nblend(ledBuffer[index], color, fract);
-        }
-    }
-}
-
 // Swirl_____________________________________
 void Swirl(CRGB *ledBuffer)
 {
-    uint16_t a = (uint16_t)(g_timeAccumulator * 1.2);
+    uint16_t a = animTime16(1.2);
 
     for (int j = 0; j < NUM_ROWS_CYLINDER; j++)
     {
@@ -662,63 +563,12 @@ void SwirlPlanar(CRGB *ledBuffer)
         }
     }
 }
-// TODO add to playlist
-void SwirlDuo(CRGB *ledBuffer)
-{
-    uint16_t a = (uint16_t)(g_timeAccumulator * 1.2);
-
-    for (int j = 0; j < NUM_ROWS_CYLINDER; j++)
-    {
-        for (int i = 0; i < NUM_COLS_CYLINDER; i++)
-        {
-            uint16_t index = XY_CYLINDER(i, j);
-            if (index != 256)
-            {
-                // ledBuffer[index].setHue(i * 24 + (sin8(j * 16 + a)) >> 1);
-                byte hue = i * 56 + (a >> 2) + (sin8(j * 16 + a)) >> 1;
-                nblend(ledBuffer[index], ColorFromPalette(gCurrentPalette, hue, 255), 16);
-            }
-        }
-    }
-}
-
-// GPT o1-preview refactor of Swirl with floating-point math
-// Doesn't solve the issue yet, more experimentation needed
-void FloatingPointSwirl(CRGB *ledBuffer)
-{
-    // Use a floating-point variable for 'a'
-    float a = g_timeAccumulator * 1.14f; // 8/7 = 1.14
-
-    for (int j = 0; j < NUM_ROWS_CYLINDER; j++)
-    {
-        for (int i = 0; i < NUM_COLS_CYLINDER; i++)
-        {
-            // Calculate offset with floating-point division
-            float offset = a / 32.0f;
-
-            // Compute the new x position with floating-point addition
-            float newX = fmod(i + offset, NUM_COLS_CYLINDER);
-
-            // Calculate index with proper casting
-            uint16_t index = XY_CYLINDER((uint8_t)newX, j);
-
-            if (index == g_lastSafeIndex)
-                continue;
-
-            // Compute hue using floating-point arithmetic
-            float hue = i * 56.0f + (a / 4.0f) + (sin8(j * 16 + (uint8_t)a) / 2.0f);
-
-            // Use nblend for smooth color transitions
-            nblend(ledBuffer[index], ColorFromPalette(gCurrentPalette, (uint8_t)hue, 255), 16);
-        }
-    }
-}
 
 // cylindrical_Pattern_____________________________________
 
 void cylindrical_Pattern(CRGB *ledBuffer)
 {
-    uint16_t a = (uint16_t)(g_timeAccumulator * 0.5);
+    uint16_t a = animTime16(0.5);
     float scale = (sin(a / 32 * PI / 180) * 16) + 32;
 
     float scale1 = 0;
@@ -742,7 +592,7 @@ void cylindrical_Pattern(CRGB *ledBuffer)
 
 void Spiral(CRGB *ledBuffer)
 {
-    uint16_t a = (uint16_t)g_timeAccumulator;
+    uint16_t a = animTime16(1);
     float scale = (sin(a / 32 * PI / 180) * 18) - 6;
 
     float scale1 = 0;
@@ -765,7 +615,7 @@ void Spiral(CRGB *ledBuffer)
 
 void Spiral2(CRGB *ledBuffer)
 {
-    uint16_t a = (uint16_t)(g_timeAccumulator * 1.33); // 8/6 = 1.33
+    uint16_t a = animTime16(1.33); // 8/6 = 1.33
     float scale = sin(a / 32 * PI / 180) * 12;
 
     float scale1 = 0;
@@ -802,7 +652,7 @@ void Spiral2(CRGB *ledBuffer)
 
 void Flower(CRGB *ledBuffer)
 {
-    uint16_t a = (uint16_t)g_timeAccumulator;
+    uint16_t a = animTime16(1);
 
     for (int j = 0; j < NUM_ROWS_CYLINDER; j++)
     {
@@ -838,7 +688,7 @@ void pride(CRGB *ledBuffer)
     uint16_t hue16 = sHue16; // gHue * 256;
     uint16_t hueinc16 = beatsin88(113, 1, 3000);
 
-    uint16_t ms = (uint16_t)(g_timeAccumulator * 8.0);
+    uint16_t ms = animTime16(8.0);
     uint16_t deltams = ms - sLastMillis;
     sLastMillis = ms;
     sPseudotime += deltams * msmultiplier;
@@ -895,7 +745,7 @@ void colorwaves(CRGB *ledBuffer)
     uint16_t hue16 = sHue16; // gHue * 256;
     uint16_t hueinc16 = beatsin88(113, 300, 1500);
 
-    uint16_t ms = (uint16_t)(g_timeAccumulator * 8.0);
+    uint16_t ms = animTime16(8.0);
     uint16_t deltams = ms - sLastMillis;
     sLastMillis = ms;
     sPseudotime += deltams * msmultiplier;
@@ -946,23 +796,9 @@ void SoftTwinkles(CRGB *ledBuffer)
     static const CRGB lightcolor(0, 4, 4);
     static const CRGB darkColor(0, 2, 2);
 
-    // EVERY_N_SECONDS(1)
-    // {
-    //     Serial.printf("DigitalRain: g_buffer1InitNeeded: %d, g_buffer2InitNeeded: %d\n", g_buffer1InitNeeded, g_buffer2InitNeeded);
-    //     Serial.printf("DigitalRain: ledbuffer: %s\n", ledBuffer == buffer1 ? "buffer1" : "buffer2");
-    // }
-
-    if (ledBuffer == buffer1 && g_buffer1InitNeeded == 1)
+    if (patternNeedsInit(ledBuffer))
     {
-        Serial.println("SoftTwinkles init for BUFFER1");
         fill_solid(ledBuffer, NUM_LEDS, CRGB::Black);
-        g_buffer1InitNeeded = 0;
-    }
-    if (ledBuffer == buffer2 && g_buffer2InitNeeded == 1)
-    {
-        Serial.println("SoftTwinkles init for Buffer2 ");
-        fill_solid(ledBuffer, NUM_LEDS, CRGB::Black);
-        g_buffer2InitNeeded = 0;
     }
 
     for (int i = 0; i < NUM_LEDS; i++)
@@ -988,344 +824,3 @@ void SoftTwinkles(CRGB *ledBuffer)
     if (ledBuffer[j].r & 1)
         ledBuffer[j].b -= 1;
 }
-
-void spiralCylinderWave(CRGB *ledBuffer)
-{
-    // Animation parameters
-    const float waveLength = 3.0f;       // Controls the number of waves around the cylinder
-    const float speedMultiplier = 0.03f; // Adjust this to control speed via g_timeAccumulator
-
-    // Loop through cylinder coordinates
-    for (uint8_t x = 0; x < NUM_COLS_CYLINDER; x++)
-    {
-        for (uint8_t y = 0; y < NUM_ROWS_CYLINDER; y++)
-        {
-            // Get LED index from coordinates
-            uint16_t index = XY_CYLINDER(x, y);
-
-            // Skip invalid indices
-            if (index == g_lastSafeIndex || index >= NUM_LEDS)
-                continue;
-
-            // Calculate angle around the cylinder
-            float angle = ((float)x / NUM_COLS_CYLINDER) * 2.0f * PI * waveLength;
-
-            // Use g_timeAccumulator for time-based animation
-            float wave = sin(angle + g_timeAccumulator * speedMultiplier + ((float)y / NUM_ROWS_CYLINDER) * PI);
-
-            // Map wave to brightness (0-255)
-            uint8_t brightness = (uint8_t)((wave + 1.0f) * 127.5f); // wave ranges from -1 to 1
-
-            // Get color from palette based on y position
-            uint8_t colorIndex = map(y, 0, NUM_ROWS_CYLINDER - 1, 0, 255);
-            CRGB color = ColorFromPalette(gCurrentPalette, colorIndex, brightness);
-
-            // Set the LED color
-            ledBuffer[index] = color;
-        }
-    }
-}
-
-void testCylinderMapping(CRGB *ledBuffer)
-{
-    for (uint8_t y = 0; y < NUM_ROWS_CYLINDER; y++)
-    {
-        for (uint8_t x = 0; x < NUM_COLS_CYLINDER; x++)
-        {
-            // Get LED index from coordinates
-            uint16_t index = XY_CYLINDER(x, y);
-
-            // Skip invalid indices
-            if (index == g_lastSafeIndex || index >= NUM_LEDS)
-                continue;
-
-            // Set color based on x-position to create a horizontal gradient
-            uint8_t hue = map(x, 0, NUM_COLS_CYLINDER - 1, 0, 255);
-
-            // Set LED color using HSV hue
-            ledBuffer[index] = CHSV(hue, 255, 255);
-        }
-    }
-}
-
-void testCylinderMapping2(CRGB *ledBuffer)
-{
-    // Calculate rotation angle based on time
-    uint8_t scaledAngle = (uint8_t)(g_timeAccumulator * 0.333); // Adjust multiplier for speed
-
-    for (uint8_t y = 0; y < NUM_ROWS_CYLINDER; y++)
-    {
-        for (uint8_t x = 0; x < NUM_COLS_CYLINDER; x++)
-        {
-            uint16_t index = XY_CYLINDER(x, y);
-            if (index == g_lastSafeIndex || index >= NUM_LEDS)
-                continue;
-
-            // Calculate rotated x position
-            int16_t rotatedX = ((int16_t)x * cos8(scaledAngle) - (int16_t)y * sin8(scaledAngle)) >> 8;
-
-            // Map rotated position to hue
-            uint8_t hue = map(fmod(rotatedX, NUM_COLS_CYLINDER),
-                              0, NUM_COLS_CYLINDER - 1,
-                              0, 255);
-
-            // Set LED color using HSV hue
-            ledBuffer[index] = CHSV(hue, 255, 255); // 255 brightness is too much, 128 too little
-        }
-    }
-    GammaCorrection(ledBuffer);
-}
-
-// a new pattern which counts upwards every 200ms to the number of leds and lights each sequentially
-// void testCylinderMapping3(CRGB *ledBuffer)
-// {
-//     static uint32_t lastUpdateTime = 0;
-//     static uint16_t currentLEDNumber = 0;
-
-//     // Check if 200ms have passed
-//     if (millis() - lastUpdateTime >= 500)
-//     {
-//         lastUpdateTime = millis();
-
-//         // Clear all LEDs
-//         FastLED.clear();
-
-//         // Light up the current LED
-//         ledBuffer[currentLEDNumber] = CRGB::Red;
-
-//         // Increment the LED number
-//         currentLEDNumber++;
-//         Serial.println(currentLEDNumber);
-
-//         // Reset the LED number if it exceeds the total number of LEDs
-//         if (currentLEDNumber >= 14)
-//         {
-//             currentLEDNumber = 0;
-//         }
-//     }
-// }
-
-void hypnoticWings(CRGB *ledBuffer)
-{
-    // Animation parameters
-    const float speedMultiplier = 0.025; // Speed of the inward movement
-    const float frequency = 0.2;         // Controls the number of waves
-    const float amplitude = 127.5;       // Half of 255 for brightness calculation
-
-    // Time variable for animation
-    float time = g_timeAccumulator * speedMultiplier;
-
-    // Center coordinates
-    float centerX = NUM_COLS_CYLINDER / 0.9;
-    float centerY = NUM_ROWS_CYLINDER / 0.9;
-
-    // Loop through cylinder coordinates
-    for (uint8_t x = 0; x < NUM_COLS_CYLINDER; x++)
-    {
-        for (uint8_t y = 0; y < NUM_ROWS_CYLINDER; y++)
-        {
-            // Get LED index from coordinates
-            uint16_t index = XY_CYLINDER(x, y);
-
-            // Skip invalid indices
-            if (index == g_lastSafeIndex || index >= NUM_LEDS)
-                continue;
-
-            // Calculate distance from center
-            float deltaX = x - centerX;
-            float deltaY = y - centerY;
-            float distance = sqrt(deltaX * deltaX + deltaY * deltaY);
-
-            // Calculate wave pattern moving inward
-            float wave = sin(distance * frequency - time);
-
-            // Map wave to brightness (0-255)
-            uint8_t brightness = (uint8_t)((wave + 1.0f) * amplitude);
-
-            // Get color from the palette based on distance
-            uint8_t colorIndex = map(distance, 0, sqrt(centerX * centerX + centerY * centerY), 0, 255);
-            CRGB color = ColorFromPalette(gCurrentPalette, colorIndex, brightness);
-
-            // Set the LED color
-            ledBuffer[index] = color;
-        }
-    }
-}
-
-void hypnoticWaves(CRGB *ledBuffer)
-{
-    // Animation parameters
-    const float speedMultiplier = 0.025;                // Speed of the inward movement
-    const float frequency = 1.0;                        // Controls the number of waves
-    const float amplitude = g_currentBrightness * 0.5f; // Half of 255 for brightness calculation
-
-    // Time variable for animation
-    float time = g_timeAccumulator * speedMultiplier;
-
-    // Center coordinates
-    float centerX = NUM_COLS_PLANAR / 2.125; // Changed from 2.1 to 2.0 for true center
-    float centerY = NUM_ROWS_PLANAR / 2.125; // Changed from 2.1 to 2.0 for true center
-
-    // Calculate max possible distance for proper scaling
-    float maxDistance = sqrt((NUM_COLS_PLANAR * NUM_COLS_PLANAR) +
-                             (NUM_ROWS_PLANAR * NUM_ROWS_PLANAR)) /
-                        2.0;
-
-    // Loop through cylinder coordinates
-    for (uint8_t x = 0; x < NUM_COLS_PLANAR; x++)
-    {
-        for (uint8_t y = 0; y < NUM_ROWS_PLANAR; y++)
-        {
-            // Get LED index from coordinates
-            uint16_t index = XY_fibon_PLANAR(x, y);
-
-            // Skip invalid indices
-            if (index == g_lastSafeIndex || index >= NUM_LEDS)
-                continue;
-
-            // Calculate distance from center with slight offset to avoid zero
-            float deltaX = x - centerX;
-            float deltaY = y - centerY;
-            float distance = sqrt(deltaX * deltaX + deltaY * deltaY) + 0.5; // Added small offset
-
-            // Calculate wave pattern moving inward
-            float wave = sin(distance * frequency - time);
-
-            // Map wave to brightness (0-255)
-            uint8_t brightness = (uint8_t)((wave + 1.0f) * amplitude);
-
-            // Get color from the palette based on normalized distance
-            uint8_t colorIndex = map(distance * 16, 0, maxDistance * 16, 0, 255);
-
-            // Set the LED color with full brightness at center
-            CRGB color = ColorFromPalette(gCurrentPalette, colorIndex, brightness);
-            ledBuffer[index] = color;
-        }
-    }
-}
-
-// void identifyLEDs()
-// {
-//   // Static variables to keep track of time and the current LED
-//   static uint32_t lastUpdateTime = 0;
-//   static uint16_t currentLEDNumber = 0;
-
-//   // Check if one second has passed
-//   if (millis() - lastUpdateTime >= 500)
-//   {
-//     lastUpdateTime = millis();
-
-//     // Clear all LEDs
-//     FastLED.clear();
-
-//     // Calculate x and y from the current LED number
-//     uint8_t x = currentLEDNumber % NUM_COLS_CILINDR;
-//     uint8_t y = currentLEDNumber / NUM_COLS_CILINDR;
-
-//     // Get LED index from coordinates
-//     uint16_t index = XY_CYLINDER(x, y);
-
-//     // Check if the index is valid
-//     if (index != g_lastSafeIndex && index < NUM_LEDS)
-//     {
-//       // Light up the LED with a bright color
-//       ledBuffer[index] = CRGB::White;
-
-//       // Print LED information to the Serial Monitor
-//       Serial.print("Lighting up LED ");
-//       Serial.print(currentLEDNumber);
-//       Serial.print(" at index ");
-//       Serial.print(index);
-//       Serial.print(" (x: ");
-//       Serial.print(x);
-//       Serial.print(", y: ");
-//       Serial.print(y);
-//       Serial.println(")");
-//     }
-//     else
-//     {
-//       // Handle invalid index
-//       Serial.print("Invalid LED at number ");
-//       Serial.print(currentLEDNumber);
-//       Serial.print(" (x: ");
-//       Serial.print(x);
-//       Serial.print(", y: ");
-//       Serial.println(y);
-//     }
-
-//     // Update the LEDs
-//     FastLED.show();
-
-//     // Move to the next LED
-//     currentLEDNumber++;
-
-//     // Reset if we've reached the end
-//     if (currentLEDNumber >= NUM_COLS_CILINDR * NUM_ROWS_CYLINDER)
-//     {
-//       currentLEDNumber = 0;
-//     }
-//   }
-// }
-
-// array pointers to used patterns______________________
-
-// List of patterns to cycle through.  Each is defined as a separate function below.
-SimplePatternList gPatterns = // this is list of patterns
-    {
-        // testCylinderMapping3,
-        hypnoticWings,
-        hypnoticWaves,
-        DigitalRain,
-        SoftTwinkles,
-        cylindrical_Pattern,
-        FireComets,
-        Swirl,
-        testCylinderMapping2,
-        DiagonalPattern,
-        spiralCylinderWave,
-        // PlasmaBall,
-        // F_lying,  // I don't like it enough.
-        RGBTunnel,
-        Flower,
-        Distortion_Waves_cylinder,
-        colorwaves,
-        Distortion_Waves_planar,
-        FireButterfly,
-        Spiral2,
-        pride,
-        RGB_Caleidoscope2,
-        RGB_Caleidoscope1,
-        RGB_hiphotic,
-        Spiral,
-        fire2021,
-};
-
-const char *patternNames[] = {
-    // "testCylinderMapping3",
-    "hypnoticWings",
-    "hypnoticWaves",
-    "DigitalRain",
-    "SoftTwinkles",
-    "cylindrical_Pattern",
-    "FireComets",
-    "Swirl",
-    "testCylinderMapping2",
-    "DiagonalPattern",
-    "spiralCylinderWave",
-    // "PlasmaBall",
-    // "F_lying",
-    "RGBTunnel",
-    "Flower",
-    "Distortion_Waves_cylinder",
-    "colorwaves",
-    "Distortion_Waves_planar",
-    "FireButterfly",
-    "Spiral2",
-    "pride",
-    "RGB_Caleidoscope2",
-    "RGB_Caleidoscope1",
-    "RGB_hiphotic",
-    "Spiral",
-    "fire2021"};
-
-const uint8_t gPatternCount = sizeof(patternNames) / sizeof(patternNames[0]);
