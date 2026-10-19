@@ -32,7 +32,7 @@ The design is sound and suits the lamp:
 
 | # | Problem | Effect | Fix |
 |---|---------|--------|-----|
-| 1 | Dependencies unpinned | The code **no longer compiles**: espressif32 8.0 (released 19 Oct 2026, Arduino-ESP32 3.x) makes `round(int)` ambiguous, and FastLED / TaskScheduler moved on too | Pinned espressif32 6.10.0, FastLED 3.9.15, TaskScheduler 3.8.5 and the DuPPa commit, the versions current at the April 2025 build; fixed the `round()` call |
+| 1 | Dependencies unpinned and 18 months stale | The code **no longer compiled** against today's releases: espressif32 8.0 (Arduino-ESP32 3.x) makes `round(int)` ambiguous, and `merge-bin.py` broke on esptool 5 | Fixed both; the project now builds on the latest espressif32 8.0.0 (Arduino-ESP32 3.3.12 / IDF 5.5), FastLED 3.10.8, TaskScheduler 4.1.0 and DuPPa `main`, with no pins. CI builds weekly to catch the next upstream break |
 | 2 | Animation clock was a `float` | Increments get rounded: patterns run ~4% fast after ~12 h and **freeze after ~58 h** of uptime (measured) | `double` clock; `animTime16()` makes the 16-bit wrap explicit (a direct float to `uint16_t` cast is undefined once out of range) |
 | 3 | Encoder counter limited to 0..254 with wrap off | After a net ~104 clicks one way, turning that way **stops doing anything** (the chip only reports min/max, which nothing listens to) | Re-centre the counter on every step |
 | 4 | Turning the knob back in playlist mode | Also went to the *next* pattern | Counter-clockwise goes to the previous pattern |
@@ -50,6 +50,24 @@ The restructure is behaviour-preserving: all 23 existing patterns render byte-id
 split (checked with the desktop renderer). The clock change (#2) alters frames only by rounding (mean difference under
 0.07/255). All patterns run clean under AddressSanitizer and UndefinedBehaviorSanitizer at normal, reversed and maximum
 speed and after 60 h of simulated uptime.
+
+## Upgrade notes: test these first on the lamp
+
+Moving from Arduino-ESP32 2.x / FastLED 3.9 to Arduino-ESP32 3.3 / FastLED 3.10 compiles cleanly, but some things can only be
+checked on the hardware:
+
+- **LED output** now uses ESP-IDF 5's RMT driver (RMT5); `FastLED.show()` returns before the transmission ends. Look for
+  flicker, a stuck first LED or wrong colours. Older FastLED 3.9.x releases had RMT5 bugs on classic ESP32s, fixed by 3.10.
+- **Patterns look slightly different** (desktop renders, same code before and after): FireButterfly and fire2021 because
+  FastLED 3.10.2 changed 3D `inoise8`; Spiral, Swirl, Flower, cylindrical_Pattern, FireComets, Spiral2, RGBTunnel,
+  colorwaves and pride because `nblend()` rounds differently (repeated `nblend(..., 16)` now settles a few steps short of
+  full brightness, so these are slightly less saturated). The other 19 patterns, including all seven new ones, are
+  unchanged.
+- **Flash use** grew from 377 KB to 570 KB (43.5% of the app partition), the price of the newer core.
+- **I2C** is a rewrite in Arduino-ESP32 3.x. The encoder should behave the same; with `UZUMARU_BEATSENSE` and no board
+  attached, check that the per-frame `Wire.requestFrom` fails quickly rather than waiting for a timeout.
+
+If the LED output misbehaves, pinning `platform = espressif32@6.12.0` (Arduino-ESP32 2.x) with a comment is the fallback.
 
 ## Recommendations (not changed)
 

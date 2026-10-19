@@ -5,7 +5,7 @@ stub platform) with a simulated clock, so what you see is what the code computes
 approximated.
 
 ```
-pio run -e m5stack_atommatrix                  # once: downloads the pinned FastLED into .pio/libdeps
+pio run -e m5stack_atommatrix                  # once: downloads the current FastLED into .pio/libdeps
 tools/preview/build.sh                         # builds .pio/preview/preview
 
 python3 tools/preview/make_preview.py html preview.html            # every pattern, animated

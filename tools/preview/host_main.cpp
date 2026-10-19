@@ -24,6 +24,19 @@ extern "C" void pinMode(uint8_t, uint8_t) {}
 extern "C" void delay(int ms) { s_nowMs += ms; }
 extern "C" void yield(void) {}
 
+// FastLED 3.10+ routes beat8/beatsin8/... through fl::millis() ->
+// fl::platforms::millis(), which its stub platform implements with the wall
+// clock.  Override those two so every time source follows the simulated clock
+// (the link step uses --allow-multiple-definition; this object comes first).
+namespace fl
+{
+namespace platforms
+{
+uint32_t millis() { return s_nowMs; }
+uint32_t micros() { return s_nowMs * 1000; }
+} // namespace platforms
+} // namespace fl
+
 #include HOST_GLOBALS
 
 int main(int argc, char **argv)

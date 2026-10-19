@@ -65,7 +65,7 @@ pio run -e m5stack_atommatrix -t upload    # flash
 pio device monitor                         # serial log: pattern and palette changes
 ```
 
-Dependency versions are pinned in [`platformio.ini`](platformio.ini). Every push is built by GitHub Actions.
+Dependencies track the latest releases (see [`platformio.ini`](platformio.ini)); CI builds weekly to catch upstream breakage. Every push is built by GitHub Actions.
 
 ## Previewing patterns without the lamp
 

@@ -19,18 +19,19 @@ def merge_bin_action(source, target, env):
     ]
     merge_cmd = " ".join(
         [
-            '"$PYTHONEXE"',
+            # $OBJCOPY is the esptool executable (esptool 5+ is a standalone
+            # binary, not a Python script, so it must not be run via $PYTHONEXE).
             '"$OBJCOPY"',
             "--chip",
             board_config.get("build.mcu", "esp32"),
-            "merge_bin",
+            "merge-bin",
             "-o",
             merged_bin,
-            "--flash_mode",
+            "--flash-mode",
             board_config.get("build.flash_mode", "dio"),
-            "--flash_freq",
+            "--flash-freq",
             "${__get_board_f_flash(__env__)}",
-            "--flash_size",
+            "--flash-size",
             board_config.get("upload.flash_size", "4MB"),
             *flash_images,
         ]

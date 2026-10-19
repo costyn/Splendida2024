@@ -357,13 +357,11 @@ void F_lying(CRGB *ledBuffer)
     byte x2 = beatsin8(23, 0, (NUM_COLS_PLANAR - 1));
     byte x3 = beatsin8(27, 0, (NUM_COLS_PLANAR - 1));
     byte x4 = beatsin8(31, 0, (NUM_COLS_PLANAR - 1));
-    byte x5 = beatsin8(33, 0, (NUM_COLS_PLANAR - 1));
 
     byte y1 = beatsin8(20, 0, (NUM_ROWS_PLANAR - 1));
     byte y2 = beatsin8(26, 0, (NUM_ROWS_PLANAR - 1));
     byte y3 = beatsin8(15, 0, (NUM_ROWS_PLANAR - 1));
     byte y4 = beatsin8(27, 0, (NUM_ROWS_PLANAR - 1));
-    byte y5 = beatsin8(30, 0, (NUM_ROWS_PLANAR - 1));
 
     CRGB color = CHSV(hue, 255, 255);
 
@@ -381,7 +379,9 @@ void F_lying(CRGB *ledBuffer)
 
 static byte code(int x, int y, int t)
 {                                                                                                                  // put your formula here
-    uint16_t outputcode = sqrt16((x -= sin8(x + t / 3) >> 4) * x + (y -= cos8(y + t >> 1) >> 4) * y) * 24 - t * 2; // moving tunnel variation
+    x -= sin8(x + t / 3) >> 4;
+    y -= cos8((y + t) >> 1) >> 4;
+    uint16_t outputcode = sqrt16(x * x + y * y) * 24 - t * 2; // moving tunnel variation
     return outputcode;
 }
 
@@ -541,7 +541,7 @@ void Swirl(CRGB *ledBuffer)
             if (index != g_lastSafeIndex)
             {
                 // ledBuffer[index].setHue(i * 24 + (sin8(j * 16 + a)) >> 1);
-                byte hue = i * 56 + (a >> 2) + (sin8(j * 16 + a)) >> 1;
+                byte hue = (i * 56 + (a >> 2) + (sin8(j * 16 + a))) >> 1;
                 nblend(ledBuffer[index], ColorFromPalette(gCurrentPalette, hue, 255), 16);
             }
         }
@@ -559,7 +559,7 @@ void SwirlPlanar(CRGB *ledBuffer)
         for (int i = 0; i < NUM_COLS_PLANAR; i++)
         {
             uint16_t index = XY_fibon_PLANAR(i, j);
-            ledBuffer[index].setHue(i * 24 + (sin8(j * 16 + a)) >> 1);
+            ledBuffer[index].setHue((i * 24 + (sin8(j * 16 + a))) >> 1);
         }
     }
 }
@@ -737,7 +737,6 @@ void colorwaves(CRGB *ledBuffer)
     static uint16_t sLastMillis = 0;
     static uint16_t sHue16 = 0;
 
-    uint8_t sat8 = beatsin88(87, 220, 250);
     uint8_t brightdepth = beatsin88(341, 96, 224);
     uint16_t brightnessthetainc16 = beatsin88(203, (25 * 256), (40 * 256));
     uint8_t msmultiplier = beatsin88(147, 23, 60);
