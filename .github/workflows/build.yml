@@ -27,6 +27,23 @@ jobs:
         run: pio run -e m5stack_atomlite_s3 -e m5stack_atomlite
       - name: Build with beatsense enabled
         run: PLATFORMIO_BUILD_FLAGS=-DUZUMARU_BEATSENSE pio run -e m5stack_atomlite_s3
+      - name: No GPS location in committed photos
+        run: |
+          pip install -q pillow
+          python3 - <<'PY'
+          import pathlib, sys
+          from PIL import Image
+          def has_gps(p):
+              try:
+                  return bool(Image.open(p).getexif().get_ifd(0x8825))
+              except Exception:
+                  return False
+          bad = [str(p) for p in pathlib.Path(".").rglob("*")
+                 if p.suffix.lower() in (".jpg", ".jpeg", ".png", ".webp", ".tif", ".tiff")
+                 and not {".git", ".pio"} & set(p.parts) and has_gps(p)]
+          print("\n".join(bad) or "no GPS data found")
+          sys.exit(1 if bad else 0)
+          PY
       - name: Geometry table is up to date
         run: python3 tools/gen_geometry.py > /tmp/geometry.h && diff -u src/geometry.h /tmp/geometry.h
       - name: Render every pattern on the desktop

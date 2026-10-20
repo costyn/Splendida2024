@@ -88,6 +88,12 @@ GPL-3.0 firmware (inherited from ldirko's). Keep the original author headers in 
 files, and say what was modified. The PCB design is CC BY-SA 4.0 (Uri Shaked / Wokwi). Update `CREDITS.md` when adding
 third-party code, palettes or assets.
 
+## Photos
+
+Photos come from the owner's phone and can carry the GPS location of their home. Strip the EXIF GPS block (losslessly,
+e.g. `piexif`, or `exiftool -gps:all=`) before committing any image here or to costyn.github.io. CI fails on GPS data
+in this repo.
+
 ## Working style
 
 - Use subagents for self-contained work (broad searches, dependency upgrades, research, tool setup), with a cheaper model
