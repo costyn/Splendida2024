@@ -117,6 +117,10 @@
     <div class="chips" id="chips-f256"></div>
   </section>
   <section>
+    <h3>From WLED</h3>
+    <div class="chips" id="chips-wled"></div>
+  </section>
+  <section>
     <h3>From the Splendida firmware</h3>
     <div class="chips" id="chips-old"></div>
   </section>
@@ -144,10 +148,15 @@ const DESCRIPTIONS = {
   SwirlFibonacci: "A three-winged swirl that puffs, dents and winds up as it turns, drawn along the seed order. From Jason Coon's Fibonacci256 firmware.",
   Pacifica: "Mark Kriegsman's gentle blue-green ocean waves, laid along the seed order so they run in spirals. Keeps its own palettes.",
   PolarNoise: "Palette noise flowing in rings and arms, sampled round a circle so there is no seam. After Jason Coon's polar noise.",
+  Octopus: "Five wriggling tentacles of interference bands that ride the palette outward. From Stepko and Sutaburosu's Octopus, via WLED.",
+  PolarLights: "Aurora curtains: noise stretched into vertical streaks, brightest in a band across the middle. From WLED's Polar Lights.",
+  SunRadiation: "A sun behind shimmering heat: noise as a bumpy surface lit from the centre, in glowing reds and oranges. From ldirko's Sun Radiation, via WLED.",
+  DriftRose: "36 points slide back and forth along their own diameters at different paces, tracing shifting rose curves. From Stepko's Drift Rose, via WLED.",
   pridePalette: "Mark Kriegsman's Pride motion, coloured from the current palette instead of the rainbow.",
 };
 const NEW = ["Uzumaki", "Parastichy", "Bloom", "SeedRunners", "Ripples", "Vortex", "Heartbeat", "ColorWheel"];
 const F256 = ["Emitter", "SwirlFibonacci", "Pacifica", "PolarNoise"];
+const WLED = ["Octopus", "PolarLights", "SunRadiation", "DriftRose"];
 const N = 256;
 
 const glow = document.getElementById("glow").getContext("2d");
@@ -212,7 +221,7 @@ async function select(name) {
   }
   const secs = current ? Math.round(current.length / (N * 3) / FPS) : 0;
   document.getElementById("meta").textContent =
-    (NEW.includes(name) ? "spiral.cpp · exact geometry" : F256.includes(name) ? "fibonacci256.cpp · Jason Coon" : "lookup-map pattern") +
+    (NEW.includes(name) ? "spiral.cpp · exact geometry" : F256.includes(name) ? "fibonacci256.cpp · Jason Coon" : WLED.includes(name) ? "wled.cpp · WLED" : "lookup-map pattern") +
     (secs ? ` · ${secs} s loop` : "");
   try {
     current = await decode(clip);
@@ -232,7 +241,7 @@ for (const clip of CLIPS) {
   chip.textContent = clip.name;
   chip.dataset.name = clip.name;
   chip.addEventListener("click", () => select(clip.name));
-  const group = NEW.includes(clip.name) ? "chips-new" : F256.includes(clip.name) ? "chips-f256" : "chips-old";
+  const group = NEW.includes(clip.name) ? "chips-new" : F256.includes(clip.name) ? "chips-f256" : WLED.includes(clip.name) ? "chips-wled" : "chips-old";
   document.getElementById(group).append(chip);
 }
 

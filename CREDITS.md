@@ -31,6 +31,14 @@ https://github.com/jasoncoon/esp8266-fastled-webserver (branch `fibonacci256`, c
 geometry, double buffering and the speed-scaled clock). `Pacifica` is Mark Kriegsman's, with Mary Corey March's
 Fibonacci variation (MIT, FastLED examples).
 
+**WLED** 2D effects, https://github.com/wled/WLED (commit 3d5c970), `wled00/FX.cpp`, EUPL-1.2 (which lists GPL-3.0 as
+a compatible licence, so these adaptations are distributed under this firmware's GPL-3.0). `Octopus`, `PolarLights`,
+`SunRadiation` and `DriftRose` in `src/patterns/wled.cpp` are adapted from `mode_2Doctopus` (Stepko and Sutaburosu, adapted
+for WLED by @blazoncek), `mode_2DPolarLights` (Kostyantyn Matviyevskyy, modified by Andrew Tuline and @dedehai),
+`mode_2DSunradiation` (ldirko, modified by Andrew Tuline) and `mode_2Ddriftrose` (stepko, adapted by Blaz Kristan and
+improved by @dedehai); originals on https://editor.soulmatelights.com (gallery 671, 762, 599, 1369). Rewritten for the
+Uzumaru geometry, double buffering and the speed-scaled clock.
+
 **Palettes**: gradient palettes from [cpt-city](http://seaviewsensing.com/pub/cpt-city/), converted for FastLED, and the
 palette set in `src/wled_palettes.h` from [WLED](https://github.com/Aircoookie/WLED).
 

@@ -6,6 +6,7 @@
 //   spiral.cpp   Uzumaru patterns built on the exact LED geometry (geometry.h)
 //   fibonacci256.cpp  patterns adapted from Jason Coon's Fibonacci256 firmware
 //                (and Mark Kriegsman's Pacifica), on the exact LED geometry
+//   wled.cpp     patterns adapted from WLED's 2D effects, on the exact LED geometry
 //   playlist.cpp the order patterns are shown in
 #ifndef PATTERNS_H
 #define PATTERNS_H
@@ -83,5 +84,11 @@ void Emitter(CRGB *buffer);
 void SwirlFibonacci(CRGB *buffer);
 void Pacifica(CRGB *buffer);
 void PolarNoise(CRGB *buffer);
+
+// wled.cpp
+void Octopus(CRGB *buffer);
+void PolarLights(CRGB *buffer);
+void SunRadiation(CRGB *buffer);
+void DriftRose(CRGB *buffer);
 
 #endif

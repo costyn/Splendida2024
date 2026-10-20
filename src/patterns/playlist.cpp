@@ -18,6 +18,11 @@ const Pattern gPatterns[] = {
     PATTERN(SwirlFibonacci),
     PATTERN(Pacifica),
     PATTERN(PolarNoise),
+    // Adapted from WLED's 2D effects (wled.cpp)
+    PATTERN(Octopus),
+    PATTERN(PolarLights),
+    PATTERN(SunRadiation),
+    PATTERN(DriftRose),
     // Map-based patterns (ldirko.cpp, mapped.cpp)
     PATTERN(hypnoticWings),
     PATTERN(hypnoticWaves),
