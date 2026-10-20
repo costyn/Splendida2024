@@ -2,20 +2,26 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
-// --- Hardware: M5Stack Atom Matrix (ESP32-PICO) driving a Splendida 256 PCB ---
-#define DATA_PIN 22      // LED data out
+// --- Hardware: pins and power budget per controller board ---
+// The board is chosen by the PlatformIO environment (see platformio.ini). This
+// file is included after FastLED.h: FastLED uses DATA_PIN as a template
+// parameter name, so the macro must not exist before FastLED is included.
+#if defined(UZUMARU_BOARD_ATOM_S3)
+#include "boards/atom_s3.h"
+#elif defined(UZUMARU_BOARD_ATOM)
+#include "boards/atom.h"
+#else
+#error "No board selected: build one of the environments in platformio.ini"
+#endif
+
 #define LED_TYPE WS2812B // leds type
 #define COLOR_ORDER GRB  // color order of leds
 #define NUM_LEDS 256
 
 // DuPPa I2C RGB rotary encoder (https://www.duppa.net/)
-#define I2C_SDA_PIN 33
-#define I2C_SCL_PIN 23
-#define I2C_INT_PIN 19
 #define ENCODER_ADDRESS 0x28
 
 // --- Power & brightness ---
-#define MAX_POWER_MILLIAMPS 800 // write here your power in milliamps. default i set 800 mA for safety
 #define MIN_BRIGHTNESS 1        // min brightness of leds
 #define MAX_BRIGHTNESS 250      // max brightness of leds - will be limited by max power
 #define DEFAULT_BRIGHTNESS 50   // default brightness

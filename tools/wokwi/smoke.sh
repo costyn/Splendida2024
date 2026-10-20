@@ -6,7 +6,7 @@
 #   tools/wokwi/smoke.sh --screenshot   additionally try to screenshot the LED part (see README: may be unsupported)
 #   tools/wokwi/smoke.sh --lint         only validate diagram.json (works offline, needs no token)
 #
-# Needs: a built firmware (pio run -e m5stack_atommatrix), the wokwi-cli binary and a
+# Needs: a built firmware (pio run -e m5stack_atomlite), the wokwi-cli binary and a
 # WOKWI_CLI_TOKEN (https://wokwi.com/dashboard/ci). Exits non-zero without the token.
 #
 # Environment: WOKWI_CLI (path to the binary), TIMEOUT_MS (default 10000, 40000 with
@@ -56,10 +56,10 @@ Create a free token at https://wokwi.com/dashboard/ci, then:
 MSG
   exit 2
 fi
-FW=".pio/build/m5stack_atommatrix/firmware.bin"
-ELF=".pio/build/m5stack_atommatrix/firmware.elf"
+FW=".pio/build/m5stack_atomlite/firmware.bin"
+ELF=".pio/build/m5stack_atomlite/firmware.elf"
 for f in "$FW" "$ELF"; do
-  [ -f "$f" ] || { echo "$f not found - build first: pio run -e m5stack_atommatrix" >&2; exit 2; }
+  [ -f "$f" ] || { echo "$f not found - build first: pio run -e m5stack_atomlite" >&2; exit 2; }
 done
 
 # --- run ------------------------------------------------------------------------

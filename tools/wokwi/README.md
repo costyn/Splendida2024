@@ -18,7 +18,7 @@ serial monitor wired), `smoke.sh`, `scenarios/patterns.test.yaml`, `../../.githu
 
 ```
 curl -L https://wokwi.com/ci/install.sh | sh        # installs ~/bin/wokwi-cli (Linux, macOS)
-pio run -e m5stack_atommatrix                       # Wokwi does not compile, it needs the build output
+pio run -e m5stack_atomlite                       # Wokwi does not compile, it needs the build output
 export WOKWI_CLI_TOKEN=wok_...
 tools/wokwi/smoke.sh                                # boot test, stops at the first Pattern line
 tools/wokwi/smoke.sh --patterns                     # also waits for the first palette change (~19 s simulated)
@@ -60,8 +60,8 @@ The lamp cannot be compiled on wokwi.com (PlatformIO project with pinned librari
 upload the built firmware:
 
 1. Get a **merged** image (bootloader + partitions + app, which Wokwi recommends for uploads): the `wokwi` artifact of a
-   workflow run (GitHub > Actions > the run > Artifacts; it is a zip), or locally `pio run -e m5stack_atommatrix -t mergebin`
-   (`.pio/build/m5stack_atommatrix/firmware-merged.bin`).
+   workflow run (GitHub > Actions > the run > Artifacts; it is a zip), or locally `pio run -e m5stack_atomlite -t mergebin`
+   (`.pio/build/m5stack_atomlite/firmware-merged.bin`).
 2. Open the "ESP32 custom application" template: <https://wokwi.com/projects/305457271083631168>.
 3. Replace its `diagram.json` tab with this repo's `diagram.json` (GitHub raw view, select all, copy, paste).
 4. In the code editor press **F1** and choose "Upload Firmware and Start Simulation...", pick the `.bin`. This is the only

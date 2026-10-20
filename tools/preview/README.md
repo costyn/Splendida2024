@@ -5,12 +5,13 @@ stub platform) with a simulated clock, so what you see is what the code computes
 approximated.
 
 ```
-pio run -e m5stack_atommatrix                  # once: downloads the current FastLED into .pio/libdeps
+pio run                                        # once: downloads the current FastLED into .pio/libdeps
 tools/preview/build.sh                         # builds .pio/preview/preview
 
 python3 tools/preview/make_preview.py html preview.html            # every pattern, animated
 python3 tools/preview/make_preview.py html preview.html Uzumaki     # just some
 python3 tools/preview/make_preview.py png  still.png Bloom 1 3 6    # stills at 1, 3 and 6 s
+tools/preview/publish.sh ../costyn.github.io                       # refresh costyn.github.io/uzumaru/preview/
 ```
 
 Environment variables: `PALETTE` (palette index, default 7 = Sunset), `SPEED` (default 0.08), `PREVIEW_SECONDS` (clip

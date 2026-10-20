@@ -1,8 +1,9 @@
 # Uzumaru: notes for coding agents
 
 Uzumaru is a round LED lamp: 256 WS2812B LEDs on a Fibonacci (Vogel/sunflower) spiral PCB (the Splendida 256), an M5Stack
-Atom Matrix (ESP32-PICO-D4), and one DuPPa I2C RGB rotary encoder as the only control. PlatformIO, Arduino framework,
-FastLED, TaskScheduler. Read `README.md` for the user-facing picture and `docs/ARCHITECTURE_REVIEW.md` for how the
+Atom S3 Lite (ESP32-S3; older lamps: Atom Lite, ESP32-PICO-D4), and one DuPPa I2C RGB rotary encoder as the only control.
+PlatformIO, Arduino framework, FastLED, TaskScheduler. Photos, the manual and the live pattern preview are on the owner's
+GitHub Pages site, https://costyn.github.io/uzumaru/ (repo costyn/costyn.github.io, folder `uzumaru/`). Read `README.md` for the user-facing picture and `docs/ARCHITECTURE_REVIEW.md` for how the
 runtime works and what is still open.
 
 ## The owner usually cannot test on hardware
@@ -18,12 +19,14 @@ Assume nobody can flash or watch the lamp during a session. So:
 ## Build and verify
 
 ```
-pio run -e m5stack_atommatrix                                    # firmware (must stay green)
-PLATFORMIO_BUILD_FLAGS=-DUZUMARU_BEATSENSE pio run -e m5stack_atommatrix   # with the beatsense reader
+pio run -e m5stack_atomlite_s3 -e m5stack_atomlite              # firmware for both boards (must stay green)
+PLATFORMIO_BUILD_FLAGS=-DUZUMARU_BEATSENSE pio run -e m5stack_atomlite_s3   # with the beatsense reader
 tools/preview/build.sh                                           # desktop renderer -> .pio/preview/preview
 python3 tools/preview/make_preview.py png out.png <Pattern> 1 3 6     # stills to look at
 python3 tools/preview/make_preview.py html out.html [Pattern ...]     # animated page (publish as an artifact for the owner)
 python3 tools/gen_geometry.py > src/geometry.h                   # only if tables.h changes; CI checks it is current
+tools/preview/publish.sh ../costyn.github.io                     # refresh the public preview (then commit there)
+tools/wokwi/smoke.sh                                             # Wokwi boot test (needs WOKWI_CLI_TOKEN)
 ```
 
 - The renderer compiles the real pattern sources against the real FastLED (stub platform) with a simulated clock. Use it
@@ -34,14 +37,22 @@ python3 tools/gen_geometry.py > src/geometry.h                   # only if table
   uptime (e.g. 60) for anything time-based.
 - For memory/overflow bugs, build the renderer with `-fsanitize=address,undefined` (see the g++ line in `build.sh`) and
   run all patterns.
-- CI (`.github/workflows/build.yml`) builds both firmware variants, checks `geometry.h`, and renders every pattern.
+- CI (`.github/workflows/build.yml`) builds both boards and the beatsense variant, checks `geometry.h`, and renders every
+  pattern. `.github/workflows/wokwi.yml` boots the Atom Lite build in Wokwi when the `WOKWI_CLI_TOKEN` secret is set (it
+  isn't yet: the owner can't set secrets from the iOS app). Wokwi has no part for the encoder.
+- When patterns change, refresh the public preview with `publish.sh` and propose the Pages change on a branch of
+  costyn/costyn.github.io (it is the owner's live site; don't push its `main` without asking).
 
 ## Code layout and conventions
 
 - `src/main.cpp` owns the runtime: TaskScheduler tasks, render loop, the two-buffer crossfade, brightness, palettes.
   `<TaskScheduler.h>` (the implementation) is included **only** there; everything else includes
   `<TaskSchedulerDeclarations.h>` via `globals.h`.
-- `src/config.h`: pins and tuning constants. `src/globals.h`: shared state and the `Pattern {name, render}` type.
+- Boards: `src/boards/atom_s3.h` and `atom.h` hold pins (`DATA_PIN`, I2C) and the LED power budget; the PlatformIO env
+  sets `UZUMARU_BOARD_ATOM_S3` or `UZUMARU_BOARD_ATOM` and `config.h` includes the matching header. It must be included
+  after `FastLED.h` (FastLED uses `DATA_PIN` as a template parameter name), so never force-include it with `-include`.
+  Code must run on both the ESP32 and the ESP32-S3: no hard-coded GPIOs outside `boards/`.
+- `src/config.h`: tuning constants. `src/globals.h`: shared state and the `Pattern {name, render}` type.
 - Patterns are `void Name(CRGB *ledBuffer)` and must draw into the buffer they are given, never into `leds[]` or a
   specific buffer: two patterns render at once while crossfading. Register them in `src/patterns/playlist.cpp` with
   `PATTERN(Name)` and declare them in `src/patterns/patterns.h`.

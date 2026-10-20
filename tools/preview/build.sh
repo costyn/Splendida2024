@@ -17,7 +17,7 @@ fi
 INC="${PREVIEW_GLOBALS:-host_globals.inc}"
 mkdir -p "$OUT/fastled-obj"
 CXX="${CXX:-g++}"
-FLAGS=(-std=c++17 -O2 -DFASTLED_STUB_IMPL -w)
+FLAGS=(-std=c++17 -O2 -DFASTLED_STUB_IMPL -DUZUMARU_BOARD_ATOM_S3 -w)
 # FastLED 3.10.x: its ESP32 RMT mock calls the non-existent stub::fl::micros()
 # when built for the host.  Compile a patched copy of that one header instead.
 PATCH="$OUT/fastled-patch"

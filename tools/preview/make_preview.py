@@ -5,7 +5,9 @@
   make_preview.py png  OUT.png  pattern [t ...]  still frames (seconds)
 
 Options via environment: PREVIEW_BIN (renderer path), PREVIEW_SECONDS, PALETTE,
-SPEED. LED positions come from src/geometry.h.
+SPEED, PREVIEW_FRAGMENT=1 (leave out <!doctype>/<head>, for pages that get
+wrapped by their host, such as a claude.ai artifact). LED positions come from
+src/geometry.h.
 """
 import base64
 import gzip
@@ -82,7 +84,11 @@ def html(out, names):
     page = template.replace("/*GEOMETRY*/null", json.dumps({"x": xs, "y": ys})) \
                    .replace("/*CLIPS*/[]", json.dumps(clips)) \
                    .replace("/*FPS*/28", str(round(1000 / (FRAME_MS * STRIDE))))
-    Path(out).write_text(page)
+    if os.environ.get("PREVIEW_FRAGMENT") != "1":
+        page = ('<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n'
+                '<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">\n'
+                + page.replace("<main>", "</head>\n<body>\n<main>", 1) + "\n</body>\n</html>\n")
+    Path(out).write_text(page, encoding="utf-8")
 
 
 if __name__ == "__main__":

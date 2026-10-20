@@ -2,8 +2,9 @@
 // Costyn van Dongen 2024-2025
 // https://github.com/costyn
 //
-// Runs on an M5Stack Atom Matrix driving a Splendida 256 PCB (by Uri Shaked /
-// Wokwi) and a DuPPa I2C RGB rotary encoder. Many of the patterns, the lookup
+// Runs on an M5Stack Atom S3 Lite (or the older Atom Lite) driving a Splendida
+// 256 PCB (by Uri Shaked / Wokwi) and a DuPPa I2C RGB rotary encoder. Board
+// pins are in boards/*.h. Many of the patterns, the lookup
 // tables and the palette playlist come from ldirko's Splendida firmware:
 // Yaroslaw Turbin 2021, https://github.com/ldirko/New-Colorful-Splendida-256-firmware-
 // See CREDITS.md.
@@ -72,6 +73,7 @@ Task _taskEncoderAnimation(25 * TASK_MILLISECOND, TASK_FOREVER, &updateEncoderId
 
 void setup()
 {
+  delay(500); // power-up delay; let the encoder start up and other stuff settle
   initializeSerial();
   initializeLEDs();
   encoderSetup();
@@ -96,9 +98,9 @@ void setup()
   _taskReadEncoder.enable();
   _taskEncoderAnimation.enable();
 
-  // Seed random number generator with noise from analog pin
-  randomSeed(analogRead(32));
-  // Also seed FastLED's random
+  // Seed both random generators from the ESP32's hardware RNG
+  // (analogRead(32) only worked on the classic ESP32; the S3 has no ADC on GPIO 32)
+  randomSeed(esp_random());
   random16_set_seed(random());
   // Pick a random palette on start
   changePalette();

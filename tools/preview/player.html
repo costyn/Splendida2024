@@ -79,6 +79,7 @@
   footer { color: var(--muted); font-size: 13px; border-top: 1px solid var(--line); padding-top: 16px; }
   footer p { margin: 0 0 8px; max-width: 64ch; }
   code { font-family: var(--font-data); font-size: 12px; }
+  footer a { color: var(--accent); }
   #error { color: var(--accent); text-align: center; }
   @media (prefers-reduced-motion: reduce) { #glow { transition: none; } }
 </style>
@@ -117,7 +118,7 @@
 
   <footer>
     <p>Each clip is 10 seconds at the default speed with the Sunset palette, simulated at about 83 frames per second and shown at /*FPS*/28. Colours are converted from LED light to screen brightness, so dim LEDs look roughly as they do on the lamp.</p>
-    <p>Regenerate with <code>tools/preview/build.sh</code> and <code>tools/preview/make_preview.py html</code>.</p>
+    <p><a href="https://costyn.github.io/uzumaru/">Photos of the lamp</a> · <a href="https://github.com/costyn/Splendida2024">Source code</a> · regenerate with <code>tools/preview/publish.sh</code>.</p>
   </footer>
 </main>
 

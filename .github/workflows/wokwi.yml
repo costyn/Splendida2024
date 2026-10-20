@@ -1,6 +1,7 @@
 name: Wokwi
 
 # Boots the firmware in the Wokwi cloud simulator and checks the serial output.
+# Simulates the Atom Lite build (classic ESP32, UART serial); the patterns are the same on the Atom S3.
 # Needs the repository secret WOKWI_CLI_TOKEN (create one at https://wokwi.com/dashboard/ci,
 # then GitHub: Settings > Secrets and variables > Actions > New repository secret).
 # Without the secret the simulation steps are skipped (the job still builds and passes).
@@ -29,11 +30,11 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install platformio
-      - run: pio pkg install -e m5stack_atommatrix && pio pkg update -e m5stack_atommatrix
+      - run: pio pkg install -e m5stack_atomlite && pio pkg update -e m5stack_atomlite
       - name: Build firmware
-        run: pio run -e m5stack_atommatrix
+        run: pio run -e m5stack_atomlite
       - name: Merge flash image (for uploading to wokwi.com by hand)
-        run: pio run -e m5stack_atommatrix -t mergebin
+        run: pio run -e m5stack_atomlite -t mergebin
         continue-on-error: true
       - name: Prepare output folder
         run: mkdir -p .pio/wokwi
@@ -77,4 +78,4 @@ jobs:
           path: |
             .pio/wokwi/serial.log
             .pio/wokwi/screenshot.png
-            .pio/build/m5stack_atommatrix/firmware-merged.bin
+            .pio/build/m5stack_atomlite/firmware-merged.bin

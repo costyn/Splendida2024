@@ -22,11 +22,11 @@ jobs:
           python-version: "3.12"
       - run: pip install platformio
       - name: Update platform and libraries to the latest allowed versions
-        run: pio pkg install -e m5stack_atommatrix && pio pkg update -e m5stack_atommatrix
-      - name: Build firmware
-        run: pio run -e m5stack_atommatrix
+        run: pio pkg install && pio pkg update
+      - name: Build firmware (Atom S3 Lite and Atom Lite)
+        run: pio run -e m5stack_atomlite_s3 -e m5stack_atomlite
       - name: Build with beatsense enabled
-        run: PLATFORMIO_BUILD_FLAGS=-DUZUMARU_BEATSENSE pio run -e m5stack_atommatrix
+        run: PLATFORMIO_BUILD_FLAGS=-DUZUMARU_BEATSENSE pio run -e m5stack_atomlite_s3
       - name: Geometry table is up to date
         run: python3 tools/gen_geometry.py > /tmp/geometry.h && diff -u src/geometry.h /tmp/geometry.h
       - name: Render every pattern on the desktop
@@ -39,5 +39,5 @@ jobs:
         with:
           name: firmware
           path: |
-            .pio/build/m5stack_atommatrix/firmware.bin
-            .pio/build/m5stack_atommatrix/firmware.elf
+            .pio/build/*/firmware.bin
+            .pio/build/*/firmware.elf
