@@ -22,7 +22,7 @@
 
 // The animation clock as a 16-bit phase that turns `hz` times per second at
 // the default speed. The speed knob scales it (and can run it backwards).
-static uint16_t phase16(float hz)
+uint16_t phase16(float hz)
 {
     return animTime16(hz * 65536.0 / (DEFAULT_ANIMATION_SPEED * 1000.0));
 }
@@ -30,7 +30,7 @@ static uint16_t phase16(float hz)
 // Elapsed animation time since the previous call, always moving forward, in
 // default-speed milliseconds. For patterns with particles that must not run
 // backwards when the speed knob goes negative.
-static float forwardMs(double &last)
+float forwardMs(double &last)
 {
     double delta = fabs(g_timeAccumulator - last) / (DEFAULT_ANIMATION_SPEED);
     last = g_timeAccumulator;
@@ -39,7 +39,7 @@ static float forwardMs(double &last)
 
 // Fade a buffer towards black with a half life measured in milliseconds, so
 // trail lengths don't depend on the frame rate.
-static void fadeByTime(CRGB *ledBuffer, float ms, float halfLifeMs, float &carry)
+void fadeByTime(CRGB *ledBuffer, float ms, float halfLifeMs, float &carry)
 {
     carry += 256.0f * (1.0f - powf(0.5f, ms / halfLifeMs));
     uint8_t amount = carry > 255 ? 255 : (uint8_t)carry;

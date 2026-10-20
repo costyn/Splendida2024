@@ -6,7 +6,9 @@
 
 Options via environment: PREVIEW_BIN (renderer path), PREVIEW_SECONDS, PALETTE,
 SPEED, PREVIEW_FRAGMENT=1 (leave out <!doctype>/<head>, for pages that get
-wrapped by their host, such as a claude.ai artifact). LED positions come from
+wrapped by their host, such as a claude.ai artifact), PREVIEW_SPLIT=1 (write
+each clip to clips/<name>.dat next to the page, fetched when it is played,
+instead of embedding all of them; for web hosting). LED positions come from
 src/geometry.h.
 """
 import base64
@@ -81,7 +83,15 @@ def html(out, names):
     clips = []
     for name in names:
         raw = render(name, CLIP_SECONDS.get(name, SECONDS) if "PREVIEW_SECONDS" not in os.environ else SECONDS)
-        clips.append({"name": name, "data": base64.b64encode(gzip.compress(raw, 9)).decode()})
+        packed = gzip.compress(raw, 9, mtime=0)
+        if os.environ.get("PREVIEW_SPLIT") == "1":
+            # .dat, not .gz: some servers would add Content-Encoding and unpack it early
+            clip_dir = Path(out).parent / "clips"
+            clip_dir.mkdir(parents=True, exist_ok=True)
+            (clip_dir / f"{name}.dat").write_bytes(packed)
+            clips.append({"name": name, "url": f"clips/{name}.dat"})
+        else:
+            clips.append({"name": name, "data": base64.b64encode(packed).decode()})
         print(f"{name}: {len(raw) // (N * 3)} frames", file=sys.stderr)
     template = (Path(__file__).parent / "player.html").read_text()
     page = template.replace("/*GEOMETRY*/null", json.dumps({"x": xs, "y": ys})) \

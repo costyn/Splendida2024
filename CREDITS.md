@@ -24,6 +24,13 @@ patterns in `src/patterns/ldirko.cpp` (modified for double buffering and a varia
 **pride and colorwaves** by Mark Kriegsman, from the FastLED examples
 (Pride2015 and ColorWavesWithPalettes), MIT.
 
+**Fibonacci256 firmware** by Jason Coon / Evil Genius Labs, GPL-3.0:
+https://github.com/jasoncoon/esp8266-fastled-webserver (branch `fibonacci256`, commit 7f3ef47). `Emitter`,
+`SwirlFibonacci`, `Pacifica` and `PolarNoise` in `src/patterns/fibonacci256.cpp` are adapted from its
+`emitterFibonacci`, `swirlFibonacci`, `pacifica_fibonacci_loop` and `drawNoisePolar` (rewritten for the Uzumaru
+geometry, double buffering and the speed-scaled clock). `Pacifica` is Mark Kriegsman's, with Mary Corey March's
+Fibonacci variation (MIT, FastLED examples).
+
 **Palettes**: gradient palettes from [cpt-city](http://seaviewsensing.com/pub/cpt-city/), converted for FastLED, and the
 palette set in `src/wled_palettes.h` from [WLED](https://github.com/Aircoookie/WLED).
 

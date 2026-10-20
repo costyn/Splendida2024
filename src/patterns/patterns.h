@@ -4,6 +4,8 @@
 //                Kriegsman's pride/colorwaves), adapted to double buffering
 //   mapped.cpp   Costyn's patterns on ldirko's planar/cylindrical maps
 //   spiral.cpp   Uzumaru patterns built on the exact LED geometry (geometry.h)
+//   fibonacci256.cpp  patterns adapted from Jason Coon's Fibonacci256 firmware
+//                (and Mark Kriegsman's Pacifica), on the exact LED geometry
 //   playlist.cpp the order patterns are shown in
 #ifndef PATTERNS_H
 #define PATTERNS_H
@@ -23,6 +25,16 @@ void GammaCorrection(CRGB *ledBuffer);
 // True once after a pattern has been (re)assigned to ledBuffer, so it can
 // reset its state. Use instead of comparing against buffer1/buffer2.
 bool patternNeedsInit(CRGB *ledBuffer);
+
+// Time helpers for the geometry patterns (spiral.cpp); all follow the
+// speed-scaled animation clock.
+// A 16-bit phase that turns `hz` times per second at the default speed.
+uint16_t phase16(float hz);
+// Elapsed clock time since the last call (updates `last`), always positive, in
+// default-speed milliseconds, for particles that must not run backwards.
+float forwardMs(double &last);
+// Fade a buffer to black with a half life in milliseconds (frame-rate independent).
+void fadeByTime(CRGB *ledBuffer, float ms, float halfLifeMs, float &carry);
 
 // ldirko.cpp
 void DigitalRain(CRGB *buffer);
@@ -65,5 +77,11 @@ void Ripples(CRGB *buffer);
 void Vortex(CRGB *buffer);
 void Heartbeat(CRGB *buffer);
 void ColorWheel(CRGB *buffer);
+
+// fibonacci256.cpp
+void Emitter(CRGB *buffer);
+void SwirlFibonacci(CRGB *buffer);
+void Pacifica(CRGB *buffer);
+void PolarNoise(CRGB *buffer);
 
 #endif

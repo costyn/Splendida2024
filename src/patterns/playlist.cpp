@@ -13,6 +13,11 @@ const Pattern gPatterns[] = {
     PATTERN(Vortex),
     PATTERN(Heartbeat),
     PATTERN(ColorWheel), // replaces testCylinderMapping2
+    // Adapted from Jason Coon's Fibonacci256 firmware (fibonacci256.cpp)
+    PATTERN(Emitter),
+    PATTERN(SwirlFibonacci),
+    PATTERN(Pacifica),
+    PATTERN(PolarNoise),
     // Map-based patterns (ldirko.cpp, mapped.cpp)
     PATTERN(hypnoticWings),
     PATTERN(hypnoticWaves),

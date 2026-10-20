@@ -113,6 +113,10 @@
     <div class="chips" id="chips-new"></div>
   </section>
   <section>
+    <h3>From Fibonacci256 (Evil Genius Labs)</h3>
+    <div class="chips" id="chips-f256"></div>
+  </section>
+  <section>
     <h3>From the Splendida firmware</h3>
     <div class="chips" id="chips-old"></div>
   </section>
@@ -136,9 +140,14 @@ const DESCRIPTIONS = {
   Vortex: "Sparks orbit the centre, the inner ones faster, and spiral down the drain before reappearing at the rim.",
   Heartbeat: "Each beat sends a ring out through the seeds; the first beat of the bar is brighter. Follows music when it can hear it.",
   ColorWheel: "The palette laid round the disc, squeezed on one side and stretched on the other while it swirls. Replaces testCylinderMapping2, without its seam.",
+  Emitter: "Arcs of colour burst from the centre and race out to the edge, leaving fading trails. From Jason Coon's Fibonacci256 firmware.",
+  SwirlFibonacci: "A three-winged swirl that puffs, dents and winds up as it turns, drawn along the seed order. From Jason Coon's Fibonacci256 firmware.",
+  Pacifica: "Mark Kriegsman's gentle blue-green ocean waves, laid along the seed order so they run in spirals. Keeps its own palettes.",
+  PolarNoise: "Palette noise flowing in rings and arms, sampled round a circle so there is no seam. After Jason Coon's polar noise.",
   pridePalette: "Mark Kriegsman's Pride motion, coloured from the current palette instead of the rainbow.",
 };
 const NEW = ["Uzumaki", "Parastichy", "Bloom", "SeedRunners", "Ripples", "Vortex", "Heartbeat", "ColorWheel"];
+const F256 = ["Emitter", "SwirlFibonacci", "Pacifica", "PolarNoise"];
 const N = 256;
 
 const glow = document.getElementById("glow").getContext("2d");
@@ -154,7 +163,9 @@ let current = null, frame = 0, playing = true, last = 0;
 
 async function decode(clip) {
   if (decoded.has(clip.name)) return decoded.get(clip.name);
-  const bytes = Uint8Array.from(atob(clip.data), c => c.charCodeAt(0));
+  const bytes = clip.url
+    ? new Uint8Array(await (await fetch(clip.url)).arrayBuffer())
+    : Uint8Array.from(atob(clip.data), c => c.charCodeAt(0));
   const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream("gzip"));
   const raw = new Uint8Array(await new Response(stream).arrayBuffer());
   decoded.set(clip.name, raw);
@@ -201,7 +212,8 @@ async function select(name) {
   }
   const secs = current ? Math.round(current.length / (N * 3) / FPS) : 0;
   document.getElementById("meta").textContent =
-    (NEW.includes(name) ? "spiral.cpp · exact geometry" : "lookup-map pattern") + (secs ? ` · ${secs} s loop` : "");
+    (NEW.includes(name) ? "spiral.cpp · exact geometry" : F256.includes(name) ? "fibonacci256.cpp · Jason Coon" : "lookup-map pattern") +
+    (secs ? ` · ${secs} s loop` : "");
   try {
     current = await decode(clip);
     frame = 0;
@@ -220,7 +232,8 @@ for (const clip of CLIPS) {
   chip.textContent = clip.name;
   chip.dataset.name = clip.name;
   chip.addEventListener("click", () => select(clip.name));
-  document.getElementById(NEW.includes(clip.name) ? "chips-new" : "chips-old").append(chip);
+  const group = NEW.includes(clip.name) ? "chips-new" : F256.includes(clip.name) ? "chips-f256" : "chips-old";
+  document.getElementById(group).append(chip);
 }
 
 document.getElementById("play").addEventListener("click", e => {

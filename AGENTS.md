@@ -59,11 +59,12 @@ tools/wokwi/smoke.sh                                             # Wokwi boot te
   - Buffers have `NUM_LEDS + 1` entries; the lookup tables return `NUM_LEDS` for "no LED here", so that write is harmless.
   - Stateful patterns reset with `if (patternNeedsInit(ledBuffer)) { ... }`.
   - Time: use the speed-scaled clock, never `millis()` (unless the pattern deliberately ignores the speed knob).
-    `animTime16(k)` for 16-bit phase math, `phase16(hz)` in `spiral.cpp`, `fmod(g_timeAccumulator * k, 2 * PI)` for
+    `animTime16(k)` for 16-bit phase math, `phase16(hz)` (shared helpers `phase16`, `forwardMs`, `fadeByTime` are
+    declared in `patterns.h`), `fmod(g_timeAccumulator * k, 2 * PI)` for
     `sin()`. The clock can run backwards (negative speed); particles use `forwardMs()`.
-  - Prefer elapsed-time fades (`fadeByTime()` in `spiral.cpp`) over per-frame `fadeToBlackBy`: the frame rate is not fixed.
+  - Prefer elapsed-time fades (`fadeByTime()`) over per-frame `fadeToBlackBy`: the frame rate is not fixed.
 - `src/patterns/ldirko.cpp` is ported from ldirko's firmware; `mapped.cpp` is the owner's patterns on ldirko's maps;
-  `spiral.cpp` uses the exact geometry. New geometry-based patterns go in `spiral.cpp` (or a new file listed in
+  `spiral.cpp` uses the exact geometry; `fibonacci256.cpp` holds ports from Jason Coon's Fibonacci256 firmware (GPL-3.0). New geometry-based patterns go in `spiral.cpp` (or a new file listed in
   `patterns.h`'s header comment).
 - `src/geometry.h` (generated): per physical LED `ledX`, `ledY` (0-255, y down, centre 128), `ledAngle` (0 = up, clockwise),
   `ledRadius`, `ledRank` (seed order from the centre). Spiral arms: `rank % F` is the arm of family F (8, 13, 21, 34),
