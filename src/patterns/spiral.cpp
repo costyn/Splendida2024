@@ -379,3 +379,31 @@ void Heartbeat(CRGB *ledBuffer)
         ledBuffer[i] = color;
     }
 }
+
+// ColorWheel_____________________________________
+// The palette laid round the disc and squeezed and stretched: the gradient
+// bunches up on one side and spreads out on the other, the bunching travels
+// round, and a swirl winds it up and unwinds it. A seamless rework of
+// testCylinderMapping2 (whose cylinder map wrapped at 9 o'clock).
+
+void ColorWheel(CRGB *ledBuffer)
+{
+    uint16_t spin = phase16(0.05f);
+    uint16_t squeezeAt = -phase16(0.02f); // where the gradient bunches up
+    // how much it bunches: 0 = even wheel .. ~0.9 = most of it on one side
+    uint8_t squeeze = scale8(cubicwave8(phase16(0.03f) >> 8), 230);
+    int32_t squeezeK = (int32_t)squeeze * 10430 >> 8; // amount * 65536 / (2 pi), Q8 -> Q16
+    // swirl: up to ~0.8 turn from the centre to the rim, winding both ways
+    int32_t twist = (int32_t)sin16(phase16(0.021f)) * 200 >> 15;
+
+    for (uint16_t i = 0; i < NUM_LEDS; i++)
+    {
+        uint16_t angle = (uint16_t)ledAngle[i] << 8;
+        // theta + a * sin(theta - c): monotonic for a < 1, so no folds
+        int32_t warp = ((int32_t)sin16(angle - squeezeAt) * squeezeK) >> 15;
+        uint16_t phase = angle + warp + ledRadius[i] * twist + spin;
+        // up the palette and back down once round the disc: no seam
+        uint8_t index = scale8(triwave8(phase >> 8), 240);
+        ledBuffer[i] = ColorFromPalette(gCurrentPalette, index, 255);
+    }
+}

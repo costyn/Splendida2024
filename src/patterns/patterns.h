@@ -45,6 +45,7 @@ void Spiral(CRGB *buffer);
 void Spiral2(CRGB *buffer);
 void Flower(CRGB *buffer);
 void pride(CRGB *buffer);
+void pridePalette(CRGB *buffer);
 void colorwaves(CRGB *buffer);
 void SoftTwinkles(CRGB *buffer);
 
@@ -63,5 +64,6 @@ void SeedRunners(CRGB *buffer);
 void Ripples(CRGB *buffer);
 void Vortex(CRGB *buffer);
 void Heartbeat(CRGB *buffer);
+void ColorWheel(CRGB *buffer);
 
 #endif

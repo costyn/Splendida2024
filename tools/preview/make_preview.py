@@ -20,7 +20,10 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 BIN = os.environ.get("PREVIEW_BIN", str(ROOT / ".pio" / "preview" / "preview"))
-SECONDS = float(os.environ.get("PREVIEW_SECONDS", "10"))
+SECONDS = float(os.environ.get("PREVIEW_SECONDS", "20"))
+# Clip lengths that show a pattern's whole cycle (seconds at the default speed).
+# Bloom's grow-flower-shed cycle is exactly 16 s, so its clip loops seamlessly.
+CLIP_SECONDS = {"Bloom": 16, "Parastichy": 29, "Uzumaki": 30, "ColorWheel": 30, "hypnoticWings": 25}
 PALETTE = os.environ.get("PALETTE", "7")
 SPEED = os.environ.get("SPEED", "0.08")
 FRAME_MS, STRIDE = 12, 3  # simulate ~83 fps, keep every 3rd frame (~28 fps)
@@ -77,7 +80,7 @@ def html(out, names):
     xs, ys = geometry()
     clips = []
     for name in names:
-        raw = render(name)
+        raw = render(name, CLIP_SECONDS.get(name, SECONDS) if "PREVIEW_SECONDS" not in os.environ else SECONDS)
         clips.append({"name": name, "data": base64.b64encode(gzip.compress(raw, 9)).decode()})
         print(f"{name}: {len(raw) // (N * 3)} frames", file=sys.stderr)
     template = (Path(__file__).parent / "player.html").read_text()

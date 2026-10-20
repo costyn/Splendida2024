@@ -12,6 +12,7 @@ const Pattern gPatterns[] = {
     PATTERN(Ripples),
     PATTERN(Vortex),
     PATTERN(Heartbeat),
+    PATTERN(ColorWheel), // replaces testCylinderMapping2
     // Map-based patterns (ldirko.cpp, mapped.cpp)
     PATTERN(hypnoticWings),
     PATTERN(hypnoticWaves),
@@ -20,7 +21,6 @@ const Pattern gPatterns[] = {
     PATTERN(cylindrical_Pattern),
     PATTERN(FireComets),
     PATTERN(Swirl),
-    PATTERN(testCylinderMapping2),
     PATTERN(DiagonalPattern),
     PATTERN(spiralCylinderWave),
     // PATTERN(PlasmaBall),
@@ -33,6 +33,7 @@ const Pattern gPatterns[] = {
     PATTERN(FireButterfly),
     PATTERN(Spiral2),
     PATTERN(pride),
+    PATTERN(pridePalette),
     PATTERN(RGB_Caleidoscope2),
     PATTERN(RGB_Caleidoscope1),
     PATTERN(RGB_hiphotic),

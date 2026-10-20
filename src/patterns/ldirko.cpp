@@ -671,29 +671,34 @@ void Flower(CRGB *ledBuffer)
 
 // pride_____________________________________
 
-void pride(CRGB *ledBuffer)
 // Pride2015
 // Animated, ever-changing rainbows.
 // by Mark Kriegsman
+// Modified: the state lives in a struct and the colour can come from the
+// current palette (pridePalette), so the same motion shows in every palette.
+struct PrideState
 {
-    static uint16_t sPseudotime = 0;
-    static uint16_t sLastMillis = 0;
-    static uint16_t sHue16 = 0;
+    uint16_t sPseudotime = 0;
+    uint16_t sLastMillis = 0;
+    uint16_t sHue16 = 0;
+};
 
+static void prideFrame(CRGB *ledBuffer, PrideState &state, bool usePalette)
+{
     uint8_t sat8 = beatsin88(87, 220, 250);
     uint8_t brightdepth = beatsin88(341, 96, 224);
     uint16_t brightnessthetainc16 = beatsin88(203, (25 * 256), (40 * 256));
     uint8_t msmultiplier = beatsin88(147, 23, 60);
 
-    uint16_t hue16 = sHue16; // gHue * 256;
+    uint16_t hue16 = state.sHue16; // gHue * 256;
     uint16_t hueinc16 = beatsin88(113, 1, 3000);
 
     uint16_t ms = animTime16(8.0);
-    uint16_t deltams = ms - sLastMillis;
-    sLastMillis = ms;
-    sPseudotime += deltams * msmultiplier;
-    sHue16 += deltams * beatsin88(400, 5, 9);
-    uint16_t brightnesstheta16 = sPseudotime;
+    uint16_t deltams = ms - state.sLastMillis;
+    state.sLastMillis = ms;
+    state.sPseudotime += deltams * msmultiplier;
+    state.sHue16 += deltams * beatsin88(400, 5, 9);
+    uint16_t brightnesstheta16 = state.sPseudotime;
 
     for (uint16_t i = 0; i < NUM_LEDS; i++)
     {
@@ -707,15 +712,35 @@ void pride(CRGB *ledBuffer)
         uint8_t bri8 = (uint32_t)(((uint32_t)bri16) * brightdepth) / 65536;
         bri8 += (255 - brightdepth);
 
-        CRGB newcolor = CHSV(hue8, sat8, bri8);
-
-        uint16_t pixelnumber = i;
-        pixelnumber = (NUM_LEDS - 1) - pixelnumber;
-        // uint16_t ledindex = pgm_read_byte (FibonCilindrTable+pixelnumber);
+        CRGB newcolor;
+        if (usePalette)
+        {
+            // run up and back down the palette (as in colorwaves), so the
+            // colour never jumps from the palette's end back to its start
+            uint16_t h16_128 = hue16 >> 7;
+            uint8_t index = (h16_128 & 0x100) ? 255 - (h16_128 >> 1) : (h16_128 >> 1);
+            newcolor = ColorFromPalette(gCurrentPalette, scale8(index, 240), bri8);
+        }
+        else
+        {
+            newcolor = CHSV(hue8, sat8, bri8);
+        }
 
         uint16_t ledindex = pgm_read_byte(fibonacciToPhysical + i);
         nblend(ledBuffer[ledindex], newcolor, 64);
     }
+}
+
+void pride(CRGB *ledBuffer)
+{
+    static PrideState state;
+    prideFrame(ledBuffer, state, false);
+}
+
+void pridePalette(CRGB *ledBuffer)
+{
+    static PrideState state;
+    prideFrame(ledBuffer, state, true);
 }
 
 // colorwaves_____________________________________

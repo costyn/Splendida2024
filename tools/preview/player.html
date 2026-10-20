@@ -105,6 +105,7 @@
   <div class="controls">
     <button id="play" type="button">Pause</button>
     <label for="diffuse">Paper diffuser <input id="diffuse" type="range" min="0" max="14" value="6"></label>
+    <label for="bright">Brightness <input id="bright" type="range" min="4" max="255" value="255"></label>
   </div>
 
   <section class="new">
@@ -117,7 +118,7 @@
   </section>
 
   <footer>
-    <p>Each clip is 10 seconds at the default speed with the Sunset palette, simulated at about 83 frames per second and shown at /*FPS*/28. Colours are converted from LED light to screen brightness, so dim LEDs look roughly as they do on the lamp.</p>
+    <p>Each clip loops 16 to 30 seconds at the default speed with the Sunset palette, simulated at about 83 frames per second and shown at /*FPS*/28. Colours are converted from LED light to screen brightness, so dim LEDs look roughly as they do on the lamp.</p>
     <p><a href="https://costyn.github.io/uzumaru/">Photos of the lamp</a> · <a href="https://github.com/costyn/Splendida2024">Source code</a> · regenerate with <code>tools/preview/publish.sh</code>.</p>
   </footer>
 </main>
@@ -134,13 +135,20 @@ const DESCRIPTIONS = {
   Ripples: "Drops fall on a pond and send out rings. With a beatsense board they fall on the beat.",
   Vortex: "Sparks orbit the centre, the inner ones faster, and spiral down the drain before reappearing at the rim.",
   Heartbeat: "Each beat sends a ring out through the seeds; the first beat of the bar is brighter. Follows music when it can hear it.",
+  ColorWheel: "The palette laid round the disc, squeezed on one side and stretched on the other while it swirls. Replaces testCylinderMapping2, without its seam.",
+  pridePalette: "Mark Kriegsman's Pride motion, coloured from the current palette instead of the rainbow.",
 };
-const NEW = Object.keys(DESCRIPTIONS);
+const NEW = ["Uzumaki", "Parastichy", "Bloom", "SeedRunners", "Ripples", "Vortex", "Heartbeat", "ColorWheel"];
 const N = 256;
 
 const glow = document.getElementById("glow").getContext("2d");
 const dots = document.getElementById("dots").getContext("2d");
-const lut = Array.from({ length: 256 }, (_, v) => Math.round(255 * Math.pow(v / 255, 1 / 2.2)));
+// LED value -> screen value: scale like FastLED.setBrightness(), then LED light -> sRGB
+let lut = [];
+const setBrightness = b => {
+  lut = Array.from({ length: 256 }, (_, v) => Math.round(255 * Math.pow((v * b) / 65025, 1 / 2.2)));
+};
+setBrightness(255);
 const decoded = new Map();
 let current = null, frame = 0, playing = true, last = 0;
 
@@ -185,7 +193,15 @@ async function select(name) {
   document.querySelectorAll(".chip").forEach(c => c.setAttribute("aria-pressed", c.dataset.name === name));
   document.getElementById("name").textContent = name;
   document.getElementById("desc").textContent = DESCRIPTIONS[name] || "Pattern from ldirko's Splendida firmware (or Costyn's, on ldirko's lookup maps).";
-  document.getElementById("meta").textContent = NEW.includes(name) ? "spiral.cpp · exact geometry" : "lookup-map pattern";
+  document.getElementById("meta").textContent = "";
+  try {
+    current = await decode(clip);
+  } catch (e) {
+    current = null;
+  }
+  const secs = current ? Math.round(current.length / (N * 3) / FPS) : 0;
+  document.getElementById("meta").textContent =
+    (NEW.includes(name) ? "spiral.cpp · exact geometry" : "lookup-map pattern") + (secs ? ` · ${secs} s loop` : "");
   try {
     current = await decode(clip);
     frame = 0;
@@ -217,6 +233,10 @@ const applyDiffuse = () => {
   document.documentElement.style.setProperty("--dots", (0.75 - diffuse.value / 28).toFixed(2));
 };
 diffuse.addEventListener("input", applyDiffuse);
+document.getElementById("bright").addEventListener("input", e => {
+  setBrightness(+e.target.value);
+  if (current) draw(current, frame);
+});
 applyDiffuse();
 
 if (matchMedia("(prefers-reduced-motion: reduce)").matches) playing = false, document.getElementById("play").textContent = "Play";
