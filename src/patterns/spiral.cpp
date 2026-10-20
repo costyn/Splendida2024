@@ -109,7 +109,7 @@ void Parastichy(CRGB *ledBuffer)
 
 // Bloom_____________________________________
 // A sunflower grows seed by seed from the centre, in the order nature places
-// them, flowers for a while, then sheds its seeds from the edge inwards.
+// them, flowers for a while, then its seeds pop out one by one, scattered.
 // Seed colours step through the palette by the golden ratio, which makes them
 // line up along the spiral arms.
 
@@ -146,14 +146,23 @@ void Bloom(CRGB *ledBuffer)
         {
             level = 160 + scale8(sin8(k * 97 + shimmer), 95);
         }
-        else // shedding: seeds drop from the edge inwards, outer ones first
+        else // shedding: seeds pop out one by one in a scattered order, each with a flash
         {
-            float front = (1.0f - (u - 0.75f) / 0.25f) * (NUM_LEDS + tail) - tail;
-            float above = k - front;
-            if (above < 0)
+            // every seed gets its own drop time, different in each cycle
+            uint32_t h = (k + 1) * 2654435761u ^ generation * 0x9E3779B9u;
+            h ^= h >> 15;
+            h *= 0x2C1B3C6Du;
+            h ^= h >> 12;
+            float dropAt = (h >> 16) / 65536.0f * 0.9f; // all gone by 90% of the phase
+            float since = (u - 0.75f) / 0.25f - dropAt; // in phase units: 1 = 4 s
+            const float flash = 0.06f;                  // ~0.25 s from pop to dark
+            if (since < 0)
                 level = 255;
-            else if (above < tail)
-                level = 255 - (uint8_t)(above * 255 / tail);
+            else if (since < flash)
+            {
+                level = 255 - (uint8_t)(since / flash * 255);
+                white = level; // starts white, fades out
+            }
         }
 
         CRGB color = ColorFromPalette(gCurrentPalette, index, level);
